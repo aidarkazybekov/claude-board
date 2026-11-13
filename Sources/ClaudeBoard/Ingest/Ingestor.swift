@@ -23,6 +23,7 @@ final class Ingestor: @unchecked Sendable {
     private let desktop = DesktopIndex()
     private var firstRun = true
     private var runs = 0
+    private var lastDiscoverySeconds: TimeInterval = 0
     private var discovered = Discovery.Result()
     private var discoveredRoots: [String] = []
     private var fileCache: [String: (mtime: Date, file: TaskFile)] = [:]
@@ -38,10 +39,14 @@ final class Ingestor: @unchecked Sendable {
         result.startedAt = started
         let fm = FileManager.default
 
-        // 0. Repos and backlog folders under the project roots (every ~5 minutes, or when roots change).
+        // 0. Repos and backlog folders under the project roots. A scan is usually a few ms, so it runs on
+        //    every refresh and new folders show up right away; very large roots fall back to every ~5 minutes.
         let roots = Roots.all
-        if firstRun || forceDiscovery || roots != discoveredRoots || runs % 15 == 0 {
+        let cheap = lastDiscoverySeconds < 0.25
+        if firstRun || forceDiscovery || roots != discoveredRoots || cheap || runs % 15 == 0 {
+            let t = Date()
             discovered = Discovery.scan(roots: roots)
+            lastDiscoverySeconds = Date().timeIntervalSince(t)
             discoveredRoots = roots
             forceDiscovery = false
             ProjectRegistry.shared.set(repos: discovered.repos)

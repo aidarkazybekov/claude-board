@@ -36,6 +36,9 @@ CLAUDEBOARD_DATA_DIR=$(mktemp -d) .build/debug/ClaudeBoard --selftest
 # What ingestion sees on your machine (prints your prompt titles, so don't paste it unredacted).
 .build/debug/ClaudeBoard --dump 30
 
+# Log every refresh (counts, timing) while the app runs, e.g. when tasks don't show up.
+CLAUDEBOARD_LOG=/tmp/claudeboard.log .build/debug/ClaudeBoard
+
 # Render every screen to PNGs, handy for UI PRs.
 .build/debug/ClaudeBoard --snapshot /tmp/cb-shots
 

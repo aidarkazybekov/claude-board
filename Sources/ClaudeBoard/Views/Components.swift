@@ -89,24 +89,75 @@ struct PriorityIcon: View {
     }
 }
 
+/// Green dot for an open session; it pulses while Claude is busy. The pulse is a Core Animation
+/// layer animation: it runs in the render server, so it costs no main-thread work or relayout
+/// (a SwiftUI `repeatForever` animation here kept the app at ~25% CPU).
 struct LiveDot: View {
     var busy: Bool
-    @State private var pulse = false
 
     var body: some View {
-        Circle()
-            .fill(busy ? Color.green : Color.green.opacity(0.45))
+        PulseDot(busy: busy)
             .frame(width: 7, height: 7)
-            .overlay(
-                Circle().stroke(Color.green.opacity(busy ? 0.6 : 0), lineWidth: 2)
-                    .scaleEffect(pulse ? 2.2 : 1)
-                    .opacity(pulse ? 0 : 1)
-            )
-            .onAppear {
-                guard busy else { return }
-                withAnimation(.easeOut(duration: 1.4).repeatForever(autoreverses: false)) { pulse = true }
-            }
             .help(busy ? "Claude is working in this session now" : "Session open, idle")
+            .accessibilityLabel(busy ? "Claude is working" : "Session open")
+    }
+}
+
+private struct PulseDot: NSViewRepresentable {
+    var busy: Bool
+    func makeNSView(context: Context) -> PulseDotView { PulseDotView() }
+    func updateNSView(_ v: PulseDotView, context: Context) { v.busy = busy }
+}
+
+final class PulseDotView: NSView {
+    private let dot = CAShapeLayer()
+    private let ring = CAShapeLayer()
+    var busy = false { didSet { if busy != oldValue { refresh() } } }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.masksToBounds = false
+        layer?.addSublayer(ring)
+        layer?.addSublayer(dot)
+        refresh()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override func layout() {
+        super.layout()
+        for l in [dot, ring] {
+            l.frame = bounds
+            l.path = CGPath(ellipseIn: bounds, transform: nil)
+        }
+    }
+
+    private func refresh() {
+        let green = NSColor.systemGreen
+        dot.fillColor = (busy ? green : green.withAlphaComponent(0.45)).cgColor
+        ring.fillColor = nil
+        ring.strokeColor = green.withAlphaComponent(0.6).cgColor
+        ring.lineWidth = 1.5
+        ring.removeAllAnimations()
+        guard busy, ProcessInfo.processInfo.environment["CLAUDEBOARD_NO_PULSE"] == nil else {
+            ring.opacity = 0
+            return
+        }
+        let scale = CABasicAnimation(keyPath: "transform.scale")
+        scale.fromValue = 1
+        scale.toValue = 2.2
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = 1
+        fade.toValue = 0
+        let group = CAAnimationGroup()
+        group.animations = [scale, fade]
+        group.duration = 1.4
+        group.repeatCount = .infinity
+        group.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        group.isRemovedOnCompletion = false
+        ring.opacity = 0
+        ring.add(group, forKey: "pulse")
     }
 }
 

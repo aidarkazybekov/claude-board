@@ -223,6 +223,27 @@ enum SelfTest {
         Ingestor.inferStatuses(&wt, session: nil)
         check(wt.first?.inferredStatus == .done, "a turn that ends in a wrap-up summary counts as answered")
 
+        print("Refresh picks up changes")
+        let rr = tmp.appendingPathComponent("refresh-root").path
+        let emptyClaude = tmp.appendingPathComponent("empty-claude").path
+        try? fm.createDirectory(atPath: rr + "/ws/backlog/tasks", withIntermediateDirectories: true)
+        try? fm.createDirectory(atPath: emptyClaude, withIntermediateDirectories: true)
+        setenv("CLAUDEBOARD_ROOTS", rr, 1)
+        setenv("CLAUDEBOARD_CLAUDE_DIR", emptyClaude, 1)
+        setenv("CLAUDEBOARD_DESKTOP_DIR", emptyClaude + "/desktop", 1)
+        func task(_ path: String, _ id: String) {
+            try! "---\nid: \(id)\ntitle: Task \(id)\nstatus: todo\n---\n".write(toFile: path, atomically: true, encoding: .utf8)
+        }
+        task(rr + "/ws/backlog/tasks/T-001-a.md", "T-001")
+        let ing = Ingestor()
+        check(ing.run().plannedTasks.count == 1, "first refresh reads the backlog")
+        task(rr + "/ws/backlog/tasks/T-002-b.md", "T-002")
+        check(ing.run().plannedTasks.count == 2, "a task file added later appears on the next refresh")
+        try? fm.createDirectory(atPath: rr + "/side/backlog/tasks", withIntermediateDirectories: true)
+        task(rr + "/side/backlog/tasks/T-001-c.md", "T-001")
+        let r3 = ing.run()
+        check(r3.taskFolders.contains(rr + "/side/backlog") && r3.plannedTasks.count == 3, "a new backlog folder appears on the next refresh")
+
         print("Demo world")
         Demo.prepare()
         let demoStore = Store()

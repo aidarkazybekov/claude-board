@@ -144,6 +144,7 @@ final class Store {
     }
 
     func refresh(rediscover: Bool = false) {
+        Self.debugLog("refresh requested (busy=\(isRefreshing))")
         if isRefreshing { pendingRefresh = true; return }
         isRefreshing = true
         let ingestor = self.ingestor
@@ -292,6 +293,16 @@ final class Store {
             + String(format: "%d tickets · %d sessions · %d backlog tasks · %.1fs", merged.count, sess.count, fileTasks.count, r.duration)
         rebuild()
         if r.dataChanged { saveIngested() }
+        Self.debugLog("merge: planned=\(r.plannedTasks.count) fileTasks=\(fileTasks.count) items=\(items.count) folders=\(taskFolders.count) changed=\(r.dataChanged) took=\(String(format: "%.2f", r.duration))s")
+    }
+
+    /// Diagnostics, only when CLAUDEBOARD_LOG points at a file.
+    static func debugLog(_ line: String) {
+        guard let path = ProcessInfo.processInfo.environment["CLAUDEBOARD_LOG"] else { return }
+        let stamp = ISO8601DateFormatter().string(from: Date())
+        let data = Data("\(stamp) \(line)\n".utf8)
+        if let h = FileHandle(forWritingAtPath: path) { h.seekToEndOfFile(); h.write(data); try? h.close() }
+        else { FileManager.default.createFile(atPath: path, contents: data) }
     }
 
     private func nextNumber(_ projectID: String) -> Int {

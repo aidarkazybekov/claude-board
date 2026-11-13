@@ -6,12 +6,11 @@ struct ClaudeBoardApp: App {
     init() {
         let s = Store()
         _store = State(initialValue: s)
-        // Captures don't depend on the main window appearing.
-        if Snapshot.directory != nil {
-            DispatchQueue.main.async {
-                s.start()
-                Snapshot.runIfRequested(store: s)
-            }
+        // Auto-refresh starts with the app, not with a view: it must keep running when the window is
+        // closed or was never opened (macOS can restore it closed), and in the menu bar.
+        DispatchQueue.main.async {
+            s.start()
+            if Snapshot.directory != nil { Snapshot.runIfRequested(store: s) }
         }
     }
 
