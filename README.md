@@ -1,5 +1,9 @@
 # ClaudeBoard
 
+[![CI](https://github.com/aidarkazybekov/claude-board/actions/workflows/ci.yml/badge.svg)](https://github.com/aidarkazybekov/claude-board/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/aidarkazybekov/claude-board)](https://github.com/aidarkazybekov/claude-board/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 A native macOS task board for your projects and for everything you ask
 [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Think Jira/Asana, but it fills
 itself in from your Claude sessions.
