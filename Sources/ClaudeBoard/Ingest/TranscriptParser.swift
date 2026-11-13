@@ -256,7 +256,10 @@ final class TranscriptParser {
             applyPlan(input, taskIndex: i)
 
         case "mcp__ccd_turn__wrap_up":
-            if let recap = input["recap"] as? String, !recap.isEmpty { tasks[i].recap = recap }
+            if let recap = input["recap"] as? String, !recap.isEmpty {
+                tasks[i].recap = recap
+                tasks[i].stats.replied = true  // a wrap-up summary is an answer, even without closing text
+            }
             if let ask = input["ask"] as? String, !ask.isEmpty {
                 tasks[i].pendingAsk = ask
                 claudeAsked = true

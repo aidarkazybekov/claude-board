@@ -106,6 +106,7 @@ final class Store {
     var showOnboarding = false
     var lastQuickAddProject: String?
     var errorMessage: String?
+    var showGuide = false
 
     // Status
     private(set) var isRefreshing = false
@@ -123,6 +124,7 @@ final class Store {
     init() {
         load()
         rebuild()
+        if Demo.isOn { Demo.seed(self) }
         if !UserDefaults.standard.bool(forKey: "onboarded") && ProcessInfo.processInfo.environment["CLAUDEBOARD_DATA_DIR"] == nil
             && !CommandLine.arguments.contains("--snapshot")
         {
@@ -286,8 +288,8 @@ final class Store {
         fileTasks = fresh + keptLocal.filter { k in !fresh.contains { $0.id == k.id } }
         localWrites = localWrites.filter { $0.value >= r.startedAt }
 
-        lastIngestInfo = String(format: "%d tickets · %d sessions · %d backlog tasks · %.1fs",
-                                merged.count, sess.count, fileTasks.count, r.duration)
+        lastIngestInfo = (Demo.isOn ? "Demo data · " : "")
+            + String(format: "%d tickets · %d sessions · %d backlog tasks · %.1fs", merged.count, sess.count, fileTasks.count, r.duration)
         rebuild()
         if r.dataChanged { saveIngested() }
     }

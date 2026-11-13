@@ -26,6 +26,7 @@ struct ContentView: View {
         .toolbar { MainToolbar() }
         .sheet(isPresented: $store.showNewTask) { NewTaskSheet() }
         .sheet(isPresented: $store.showOnboarding) { OnboardingSheet() }
+        .sheet(isPresented: $store.showGuide) { GuideSheet() }
         .alert("ClaudeBoard", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
             Button("OK") { store.errorMessage = nil }
         } message: {
@@ -224,7 +225,25 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .sheet(item: $editing) { p in ProjectSettingsSheet(project: p) }
         .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 6) {
+            if Demo.isOn {
+                HStack(spacing: 6) {
+                    Image(systemName: "play.rectangle.on.rectangle").foregroundStyle(Color.accentColor)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Demo board").font(.caption.weight(.semibold))
+                        Text("Sample data. Your real data is untouched.").font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Quit Demo") { NSApp.terminate(nil) }.controlSize(.small)
+                }
+                .padding(8)
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 10)
+            }
             HStack {
+                Button { store.showGuide = true } label: { Image(systemName: "questionmark.circle") }
+                    .buttonStyle(.borderless)
+                    .help("ClaudeBoard Guide (⌘/)")
                 if let d = store.lastRefresh {
                     Text("Synced \(Fmt.ago(d))").font(.caption2).foregroundStyle(.tertiary)
                 }
@@ -238,6 +257,7 @@ struct SidebarView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
+            }
         }
     }
 

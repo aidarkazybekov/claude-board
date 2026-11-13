@@ -152,12 +152,15 @@ struct OnboardingSheet: View {
             .formStyle(.grouped)
             .frame(height: 210)
             HStack {
+                Button("Try the Demo Board First") { DemoLauncher.open() }
+                    .help("Opens a second window with sample projects, so you can click around safely")
                 Spacer()
                 Button("Get Started") {
                     UserDefaults.standard.set(true, forKey: "onboarded")
                     if UserDefaults.standard.stringArray(forKey: Roots.defaultsKey) == nil { Roots.all = Roots.all }
                     store.refresh(rediscover: true)
                     dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { store.showGuide = true }
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)

@@ -172,7 +172,10 @@ enum Markdown {
         let cleaned = reflow(text).split(separator: "\n", omittingEmptySubsequences: false).map { line -> String in
             var l = String(line)
             if l.hasPrefix("#") { l = l.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces) }
-            if l.hasPrefix("- ") || l.hasPrefix("* ") { l = "• " + l.dropFirst(2) }
+            let t = l.trimmingCharacters(in: .whitespaces)
+            if t.hasPrefix("- [x] ") || t.hasPrefix("- [X] ") { l = "☑ " + t.dropFirst(6) }
+            else if t.hasPrefix("- [ ] ") { l = "☐ " + t.dropFirst(6) }
+            else if l.hasPrefix("- ") || l.hasPrefix("* ") { l = "• " + l.dropFirst(2) }
             return l
         }.joined(separator: "\n")
         let opts = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace,

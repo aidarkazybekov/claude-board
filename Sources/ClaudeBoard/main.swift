@@ -6,6 +6,9 @@ if let i = args.firstIndex(of: "--dump") {
     Dump.run(limit: n)
     exit(0)
 }
+if args.contains("--demo") {
+    Demo.prepare()
+}
 if args.contains("--selftest") {
     let code = MainActor.assumeIsolated { SelfTest.run() }
     exit(code)

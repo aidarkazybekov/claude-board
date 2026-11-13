@@ -17,7 +17,7 @@ Thanks for helping. Ideas, bug reports, docs fixes and code are all welcome. Sma
 
 ## Development setup
 
-You need macOS 14+ and the Xcode Command Line Tools (`xcode-select --install`), Swift 6. Full
+You need macOS 15+ and the Xcode Command Line Tools (`xcode-select --install`), Swift 6. Full
 Xcode is optional.
 
 ```bash
@@ -38,6 +38,10 @@ CLAUDEBOARD_DATA_DIR=$(mktemp -d) .build/debug/ClaudeBoard --selftest
 
 # Render every screen to PNGs, handy for UI PRs.
 .build/debug/ClaudeBoard --snapshot /tmp/cb-shots
+
+# Run on the sample "Acme" demo board (never reads your real data). Add --snapshot <dir> for
+# the curated README scenes, then `swift scripts/make-media.swift <dir> docs/media build/media`.
+.build/debug/ClaudeBoard --demo
 ```
 
 The code layout is in the [README](README.md#development).
@@ -66,7 +70,8 @@ These keep the app trustworthy. Please don't break them in a PR:
 - Run `--selftest` and make sure it passes. If you change parsing, merge or backlog-file logic,
   add a check to `Sources/ClaudeBoard/SelfTest.swift`.
 - For UI changes, attach a screenshot. `--snapshot` works without Screen Recording permission.
-  **Use demo data, not your real board**: real boards show your prompts and project names.
+  **Use the demo board (`--demo`), not your real board**: real boards show your prompts and
+  project names.
 - CI builds the app and runs the self-test on every PR.
 
 ## Privacy when reporting

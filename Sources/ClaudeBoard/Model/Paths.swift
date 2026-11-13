@@ -3,11 +3,14 @@ import Foundation
 enum Paths {
     static let home = FileManager.default.homeDirectoryForCurrentUser.path
 
-    static var claudeDir: String { home + "/.claude" }
+    /// Overridable so the demo (and tests) never read the real Claude Code data.
+    static var claudeDir: String { ProcessInfo.processInfo.environment["CLAUDEBOARD_CLAUDE_DIR"] ?? home + "/.claude" }
     static var projectsDir: String { claudeDir + "/projects" }
     static var historyFile: String { claudeDir + "/history.jsonl" }
     static var liveSessionsDir: String { claudeDir + "/sessions" }
-    static var desktopSessionsDir: String { home + "/Library/Application Support/Claude/claude-code-sessions" }
+    static var desktopSessionsDir: String {
+        ProcessInfo.processInfo.environment["CLAUDEBOARD_DESKTOP_DIR"] ?? home + "/Library/Application Support/Claude/claude-code-sessions"
+    }
 
     static var appSupport: URL {
         if let override = ProcessInfo.processInfo.environment["CLAUDEBOARD_DATA_DIR"] {
@@ -22,7 +25,13 @@ enum Paths {
     }
 
     static func tilde(_ p: String) -> String {
-        p.hasPrefix(home) ? "~" + p.dropFirst(home.count) : p
+        if Demo.isOn {
+            // Show demo folders as if they were in the home folder: ~/Projects/acme/…
+            for b in [Demo.base.path, "/private" + Demo.base.path] where p.hasPrefix(b) {
+                return "~" + p.dropFirst(b.count)
+            }
+        }
+        return p.hasPrefix(home) ? "~" + p.dropFirst(home.count) : p
     }
 }
 
@@ -45,6 +54,7 @@ enum Roots {
             return detect()
         }
         set {
+            guard !Demo.isOn else { return }  // the demo must never change the real settings
             UserDefaults.standard.set(newValue.map(Paths.tilde), forKey: defaultsKey)
         }
     }

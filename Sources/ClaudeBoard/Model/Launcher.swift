@@ -32,6 +32,15 @@ enum Launcher {
     }
 
     private static func run(script body: String) {
+        if Demo.isOn {
+            // Demo projects are fake folders; show what would happen instead of starting Claude.
+            let alert = NSAlert()
+            alert.messageText = "Demo board"
+            alert.informativeText = "With your real projects, this opens Terminal and runs:\n\n"
+                + body.split(separator: "\n").filter { $0.contains("claude") || $0.hasPrefix("cd ") }.joined(separator: "\n")
+            alert.runModal()
+            return
+        }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("claudeboard-\(UUID().uuidString.prefix(8)).command")
         let script = "#!/bin/zsh -l\nrm -f \(quote(url.path))\n" + body + "\n"
         do {

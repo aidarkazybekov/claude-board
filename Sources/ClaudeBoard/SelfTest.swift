@@ -212,6 +212,31 @@ enum SelfTest {
         check(made.count == 1 && fm.fileExists(atPath: proj + "/backlog/README.md") && fm.fileExists(atPath: proj + "/backlog/BACKLOG.md"), "backlog/ created and local task moved into it")
         check(!store.items.contains { $0.origin == .manual && $0.projectID == proj }, "local copy removed after move")
 
+        print("Wrap-up without closing text")
+        let wf = tmp.appendingPathComponent("aaaaaaaa-0000-0000-0000-000000000001.jsonl")
+        try! ([user("Summarise this week's changes for the team update, five bullets", 5000),
+               asst([tool("mcp__ccd_turn__wrap_up", ["recap": "Five bullets written."])], 5010)].joined(separator: "\n") + "\n")
+            .write(to: wf, atomically: true, encoding: .utf8)
+        let wp = TranscriptParser(url: wf)
+        wp.update()
+        var wt = wp.tasks
+        Ingestor.inferStatuses(&wt, session: nil)
+        check(wt.first?.inferredStatus == .done, "a turn that ends in a wrap-up summary counts as answered")
+
+        print("Demo world")
+        Demo.prepare()
+        let demoStore = Store()
+        demoStore.merge(Ingestor().run())
+        let demoItems = demoStore.items
+        check(demoItems.filter { $0.origin == .file }.count == 10, "demo backlog has 10 tasks")
+        check(demoItems.filter { $0.origin == .manual }.count == 4, "demo has 4 local tasks")
+        check(demoItems.contains { $0.status == .needsYou && !$0.origin.isPlanned }, "a Claude ticket waits on you")
+        check(demoStore.liveSessions.contains { $0.isBusy }, "a session is busy")
+        check(demoItems.filter { !($0.claudeLinks ?? []).isEmpty }.count >= 4, "backlog tasks linked to Claude sessions")
+        check(!demoItems.contains { !$0.origin.isPlanned && $0.origin != .suggested && $0.status == .todo && $0.recap != nil },
+              "no finished ticket left in To Do")
+        check(Paths.tilde(Demo.base.path + "/Projects/acme") == "~/Projects/acme", "demo paths shown as ~/Projects")
+
         try? FileManager.default.removeItem(at: tmp)
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) check(s) failed")
         return failures == 0 ? 0 : 1

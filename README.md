@@ -17,12 +17,14 @@ It shows two kinds of tickets on one board:
 Mention a task's key in any Claude prompt ("look at T-015", "[WEB-3] …") and that session is
 linked to the task, so the task shows Claude's live activity.
 
+![ClaudeBoard: board with Claude sessions and planned tasks](docs/media/cover.png)
+
 > Community project. Not affiliated with or endorsed by Anthropic. "Claude" is a trademark of
 > Anthropic.
 
 ## Install
 
-**Requirements:** macOS 14 Sonoma or later. Claude Code (CLI or the desktop app's Code tab) used on
+**Requirements:** macOS 15 Sequoia or later. Claude Code (CLI or the desktop app's Code tab) used on
 the same Mac.
 
 ### Download
@@ -48,6 +50,25 @@ scripts/build-app.sh          # builds, bundles, installs to ~/Applications
 
 On first launch, pick the folders that hold your projects (it suggests `~/Developer`,
 `~/Projects`, `~/code` and similar if they exist). Every git repo inside becomes a project.
+
+### Try it without your data
+
+**Help → Try the Demo Board** opens a second window with a fictional company: a few apps,
+Claude sessions in every state, and a shared backlog. Click around, drag cards, add tasks.
+Nothing touches your real data. From source: `.build/debug/ClaudeBoard --demo`.
+
+## Tour
+
+![Tour](docs/media/tour.gif)
+
+New here? The **[guide](docs/GUIDE.md)** walks through every feature with screenshots. The same
+guide is in the app under **Help → ClaudeBoard Guide** (⌘/).
+
+| Plan your tasks per project | See where Claude waits on you |
+|---|---|
+| ![Plan](docs/media/plan.png) | ![Needs you](docs/media/needs-you.png) |
+| **Worklog of what got done** | **Insights** |
+| ![Worklog](docs/media/worklog.png) | ![Insights](docs/media/insights.png) |
 
 ## Features
 
@@ -136,6 +157,15 @@ swift build
 CLAUDEBOARD_DATA_DIR=$(mktemp -d) .build/debug/ClaudeBoard --selftest     # parser, merge and backlog-file checks
 .build/debug/ClaudeBoard --dump 30                                        # what ingestion sees on your machine
 .build/debug/ClaudeBoard --snapshot /tmp/cb-shots                         # render every screen to PNG
+.build/debug/ClaudeBoard --demo                                           # run on sample data
+```
+
+README screenshots, the GIF and the tour videos are generated from the demo board:
+
+```bash
+scripts/build-app.sh --no-install
+build/ClaudeBoard.app/Contents/MacOS/ClaudeBoard --demo --snapshot "$PWD/build/raw"
+swift scripts/make-media.swift build/raw docs/media build/media
 ```
 
 ```
@@ -144,7 +174,8 @@ Sources/ClaudeBoard/
             Ingestor (orchestration, status inference), PromptText (request heuristics)
   Model/    Models, Store (merge, links, edits, persistence), Paths (roots, discovery), Launcher
   Views/    Plan, Board, List, Worklog, Insights, TaskDetail, NewTask, Settings, MenuBar
-scripts/    build-app.sh, make-icon.swift
+scripts/    build-app.sh, make-icon.swift, make-media.swift (screenshots, GIF, videos)
+docs/       GUIDE.md, media/
 Resources/  plotly-cartesian.min.js
 ```
 

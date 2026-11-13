@@ -1,7 +1,19 @@
 import SwiftUI
 
 struct ClaudeBoardApp: App {
-    @State private var store = Store()
+    @State private var store: Store
+
+    init() {
+        let s = Store()
+        _store = State(initialValue: s)
+        // Captures don't depend on the main window appearing.
+        if Snapshot.directory != nil {
+            DispatchQueue.main.async {
+                s.start()
+                Snapshot.runIfRequested(store: s)
+            }
+        }
+    }
 
     var body: some Scene {
         Window("ClaudeBoard", id: "main") {
@@ -9,6 +21,8 @@ struct ClaudeBoardApp: App {
                 .environment(store)
         }
         .defaultSize(width: 1500, height: 900)
+        // Always show the main window at launch, whatever macOS saved about it at the last quit.
+        .defaultLaunchBehavior(.presented)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("New Task") {
@@ -28,9 +42,23 @@ struct ClaudeBoardApp: App {
                 Button("Needs You") { store.sidebar = .inbox }.keyboardShortcut("1", modifiers: [.command, .shift])
                 Button("All Projects") { store.sidebar = .all }.keyboardShortcut("0", modifiers: [.command, .shift])
             }
+            CommandGroup(replacing: .help) {
+                Button("ClaudeBoard Guide") { store.showGuide = true }.keyboardShortcut("/", modifiers: .command)
+                if !Demo.isOn {
+                    Button("Try the Demo Board") { DemoLauncher.open() }
+                }
+                Divider()
+                Button("ClaudeBoard on GitHub") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/aidarkazybekov/claude-board")!)
+                }
+                Button("Report an Issue…") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/aidarkazybekov/claude-board/issues/new/choose")!)
+                }
+            }
         }
 
-        MenuBarExtra {
+        // The demo runs next to the real app, so it stays out of the menu bar.
+        MenuBarExtra(isInserted: .constant(!Demo.isOn)) {
             MenuBarView().environment(store)
         } label: {
             MenuBarLabel().environment(store)
@@ -41,5 +69,23 @@ struct ClaudeBoardApp: App {
             SettingsView().environment(store)
         }
         .defaultSize(width: 560, height: 620)
+    }
+}
+
+/// Opens a second copy of the app on sample data.
+enum DemoLauncher {
+    static func open() {
+        let bundle = Bundle.main.bundleURL
+        if bundle.pathExtension == "app" {
+            let cfg = NSWorkspace.OpenConfiguration()
+            cfg.arguments = ["--demo"]
+            cfg.createsNewApplicationInstance = true
+            NSWorkspace.shared.openApplication(at: bundle, configuration: cfg)
+        } else if let exe = Bundle.main.executableURL {
+            let p = Process()
+            p.executableURL = exe
+            p.arguments = ["--demo"]
+            try? p.run()
+        }
     }
 }
