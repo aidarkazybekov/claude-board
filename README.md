@@ -147,6 +147,16 @@ Resources/  plotly-cartesian.min.js
 Claude Code's log format is not a public API and can change between versions. If tickets look
 wrong after an update, `--dump` shows what the parser sees. Issues and PRs welcome.
 
+## Contributing
+
+Ideas, bug reports and pull requests are welcome.
+
+- **Ideas and bugs:** [open an issue](../../issues/new/choose). The templates ask for what's needed.
+- **Code:** see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, ground rules (local only, never
+  write to `~/.claude`, surgical backlog edits) and the self-test.
+- **New here?** Start with a
+  [`good first issue`](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Bundles [plotly.js](https://github.com/plotly/plotly.js) (MIT,

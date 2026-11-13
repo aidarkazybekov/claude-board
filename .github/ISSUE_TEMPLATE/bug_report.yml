@@ -1,0 +1,63 @@
+name: Bug report
+description: Something shows wrong, is missing, or crashes
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Please redact private details** (prompts, client names, paths, secrets) from anything you paste.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run a Claude Code session in a repo under my project root
+        2. Ask it to …
+        3. The ticket shows …
+  - type: input
+    id: version
+    attributes:
+      label: ClaudeBoard version
+      description: Shown in About ClaudeBoard, or the release you downloaded.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: input
+    id: claude
+    attributes:
+      label: Claude Code version
+      description: Output of `claude --version`. The log format changes between versions.
+      placeholder: "2.1.321"
+  - type: dropdown
+    id: entry
+    attributes:
+      label: Where you run Claude Code
+      multiple: true
+      options:
+        - Terminal (CLI)
+        - Claude desktop app (Code tab)
+        - IDE extension
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      placeholder: "macOS 15.5, Apple Silicon"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Extra detail
+      description: Redacted `--dump` output, a screenshot from `--snapshot`, or a few synthetic JSONL lines that reproduce it.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I removed private prompts, client names and secrets from what I pasted.
+          required: true
