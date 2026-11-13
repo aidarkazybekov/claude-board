@@ -67,6 +67,7 @@ These keep the app trustworthy. Please don't break them in a PR:
   add a check to `Sources/ClaudeBoard/SelfTest.swift`.
 - For UI changes, attach a screenshot. `--snapshot` works without Screen Recording permission.
   **Use demo data, not your real board**: real boards show your prompts and project names.
+- CI builds the app and runs the self-test on every PR.
 
 ## Privacy when reporting
 
