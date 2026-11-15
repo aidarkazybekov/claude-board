@@ -203,3 +203,48 @@
       document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
     }
   })();
+
+  // Phones can't run a Mac app. There, every "Download for Mac" opens a sheet that sends this page
+  // to the visitor's Mac instead (share sheet → AirDrop/Messages/Notes, email, or copy).
+  (function () {
+    var dlg = document.getElementById('handoff');
+    if (!dlg || typeof dlg.showModal !== 'function') return;
+    var ua = navigator.userAgent;
+    var ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var phone = /iPhone|iPod|Android/.test(ua) || ipad || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (!phone) return;
+    var url = location.origin + location.pathname;
+    var L = { cta: dlg.dataset.cta, copied: dlg.dataset.copied, press: dlg.dataset.press };
+    var share = dlg.querySelector('[data-handoff=share]');
+    var mail = dlg.querySelector('[data-handoff=mail]');
+    var copyBtn = dlg.querySelector('[data-handoff=copy]');
+    var field = dlg.querySelector('.handoff-url');
+    var title = document.title;
+
+    mail.href = mail.getAttribute('href') + '&body=' + encodeURIComponent(url);
+    if (!navigator.share) {
+      // No share sheet (e.g. some Android browsers): email becomes the main action.
+      share.hidden = true;
+      mail.classList.replace('btn-ghost', 'btn-primary');
+      dlg.querySelector('.handoff-note').hidden = true;  // AirDrop and Handoff come through the share sheet
+    }
+    document.querySelectorAll('a[href*="ClaudeBoard-macOS-arm64.zip"]:not([data-handoff])').forEach(function (a) {
+      a.textContent = L.cta;
+      a.addEventListener('click', function (e) { e.preventDefault(); open(); });
+    });
+    function open() { field.hidden = true; copyBtn.textContent = copyBtn.dataset.label || copyBtn.textContent; dlg.showModal(); }
+
+    share.addEventListener('click', function () {
+      navigator.share({ title: title, url: url }).then(function () { dlg.close(); }, function () {});
+    });
+    copyBtn.dataset.label = copyBtn.textContent;
+    function showField() { field.value = url; field.hidden = false; field.focus(); field.select(); copyBtn.textContent = L.press; }
+    copyBtn.addEventListener('click', function () {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(function () { copyBtn.textContent = L.copied; }, showField);
+      } else { showField(); }
+    });
+    dlg.querySelector('[data-handoff=try]').addEventListener('click', function () { dlg.close(); });
+    // Tap outside the sheet closes it.
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  })();

@@ -134,7 +134,7 @@
         <input type="file" id="yours-input" class="sr" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
         <span>или перетащите папку на карточку</span>
       </div>
-      <p class="yours-mobile">Откройте эту страницу на Mac, где вы работаете с Claude Code, чтобы увидеть свои цифры.</p>
+      <div class="yours-mobile"><p>Откройте эту страницу на Mac, где вы работаете с Claude Code, чтобы увидеть свои цифры.</p><a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Скачать для Mac</a></div>
     </div>
     <div class="yours-card" id="yours-card" data-state="idle" aria-live="polite">
       <div class="y-idle">
@@ -282,6 +282,22 @@
     <p class="legal">Лицензия MIT. Проект сообщества, не связан с Anthropic и не одобрен ею. Claude является товарным знаком Anthropic.</p>
   </div>
 </footer>
+
+<dialog class="handoff" id="handoff" aria-labelledby="handoff-title" data-cta="Отправить на Mac" data-copied="Ссылка скопирована" data-press="Выделите и скопируйте ссылку">
+  <form method="dialog"><button class="handoff-x" aria-label="Закрыть">Закрыть</button></form>
+  <img src="../site/icon-180.png" width="56" height="56" alt="">
+  <h2 id="handoff-title">Установите на Mac</h2>
+  <p>ClaudeBoard — приложение для Mac и Claude Code. Отправьте эту страницу на свой Mac и установите там примерно за минуту.</p>
+  <div class="handoff-actions">
+    <button type="button" class="btn btn-primary" data-handoff="share">Отправить на Mac…</button>
+    <a class="btn btn-ghost" data-handoff="mail" href="mailto:?subject=ClaudeBoard%20%D0%BD%D0%B0%20%D0%BC%D0%BE%D0%B9%20Mac">Прислать ссылку на почту</a>
+    <button type="button" class="btn btn-ghost" data-handoff="copy">Скопировать ссылку</button>
+  </div>
+  <input class="handoff-url" type="text" readonly aria-label="Ссылка на эту страницу" hidden>
+  <p class="handoff-note">Подойдёт AirDrop, сообщение самому себе или заметка. В Safari страницу также может предложить Handoff в Dock на Mac.</p>
+  <a class="handoff-try" href="#try" data-handoff="try">А пока попробуйте доску прямо на телефоне</a>
+  <a class="handoff-zip" data-handoff="zip" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Всё равно скачать zip</a>
+</dialog>
 
 <script src="../site/main.js"></script>
 <script src="../site/yours.js"></script>

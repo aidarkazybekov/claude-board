@@ -323,6 +323,8 @@
   .yours-go label { cursor: pointer; }
   .yours-go span { color: var(--muted); font-size: 14px; }
   .yours-mobile { display: none; margin-top: 22px; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 15px; }
+  .yours-mobile p { margin: 0 0 12px; }
+  .yours-mobile .btn { width: 100%; justify-content: center; }
 
   .yours-card { position: relative; background: var(--surface); border-radius: 20px; padding: 32px; box-shadow: var(--shadow), inset 0 0 0 1px var(--line); min-height: 420px; transition: box-shadow .2s, transform .2s; }
   .yours-card.over { box-shadow: var(--shadow), inset 0 0 0 2px var(--accent); transform: scale(1.01); }
@@ -378,3 +380,26 @@
   }
   .y-share { display: block; width: 100%; margin-top: 14px; padding: 10px 12px; border: 0; border-radius: 10px; resize: none;
     font: 14px/1.45 -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--accent); }
+
+  /* Phones: "Send to my Mac" sheet instead of downloading a Mac zip onto the phone. */
+  .handoff { border: 0; padding: 26px 22px calc(22px + env(safe-area-inset-bottom)); margin: auto auto 0; width: 100%; max-width: 520px;
+    border-radius: 22px 22px 0 0; background: var(--surface); color: var(--text); box-shadow: 0 -20px 60px -20px rgb(0 0 0 / .5); }
+  .handoff[open] { animation: handoff-up .32s cubic-bezier(.16,1,.3,1); }
+  .handoff::backdrop { background: rgb(10 10 12 / .45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  @keyframes handoff-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .handoff[open] { animation: none; } }
+  .handoff h2 { font-size: 24px; margin: 14px 0 6px; }
+  .handoff p { margin: 0; color: var(--muted); font-size: 16px; }
+  .handoff-x { position: absolute; top: 14px; right: 14px; border: 0; background: var(--surface-2); color: var(--muted); font: 600 13px -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+  .handoff-actions { display: grid; gap: 10px; margin-top: 20px; }
+  .handoff-actions .btn { justify-content: center; width: 100%; }
+  .handoff-url { width: 100%; margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 0; background: var(--surface-2); color: var(--text);
+    font: 15px ui-monospace, "SF Mono", Menlo, monospace; box-shadow: inset 0 0 0 1px var(--accent); }
+  .handoff-note { margin-top: 16px !important; font-size: 14px !important; }
+  .handoff-try { display: block; margin-top: 16px; color: var(--accent); font-weight: 600; text-decoration: none; }
+  .handoff-zip { display: block; margin-top: 10px; color: var(--faint); font-size: 13px; }
+  @media (hover: none) and (pointer: coarse) {
+    .install { display: none; }
+  }
+  .handoff [hidden] { display: none !important; }

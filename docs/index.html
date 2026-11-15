@@ -134,7 +134,7 @@
         <input type="file" id="yours-input" class="sr" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
         <span>or drop the folder on the card</span>
       </div>
-      <p class="yours-mobile">Open this page on the Mac where you use Claude Code to see your own numbers.</p>
+      <div class="yours-mobile"><p>Open this page on the Mac where you use Claude Code to see your own numbers.</p><a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac</a></div>
     </div>
     <div class="yours-card" id="yours-card" data-state="idle" aria-live="polite">
       <div class="y-idle">
@@ -282,6 +282,22 @@
     <p class="legal">MIT licensed. A community project, not affiliated with or endorsed by Anthropic. Claude is a trademark of Anthropic.</p>
   </div>
 </footer>
+
+<dialog class="handoff" id="handoff" aria-labelledby="handoff-title" data-cta="Send to my Mac" data-copied="Link copied" data-press="Select and copy the link">
+  <form method="dialog"><button class="handoff-x" aria-label="Close">Close</button></form>
+  <img src="site/icon-180.png" width="56" height="56" alt="">
+  <h2 id="handoff-title">Get it on your Mac</h2>
+  <p>ClaudeBoard is a Mac app for Claude Code. Send this page to your Mac and install it there in about a minute.</p>
+  <div class="handoff-actions">
+    <button type="button" class="btn btn-primary" data-handoff="share">Send to my Mac…</button>
+    <a class="btn btn-ghost" data-handoff="mail" href="mailto:?subject=ClaudeBoard%20for%20my%20Mac">Email me the link</a>
+    <button type="button" class="btn btn-ghost" data-handoff="copy">Copy link</button>
+  </div>
+  <input class="handoff-url" type="text" readonly aria-label="Link to this page" hidden>
+  <p class="handoff-note">AirDrop, a message to yourself or a note all work. In Safari, Handoff can also show this page in your Mac's Dock.</p>
+  <a class="handoff-try" href="#try" data-handoff="try">Meanwhile, try the board on this phone</a>
+  <a class="handoff-zip" data-handoff="zip" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download the zip anyway</a>
+</dialog>
 
 <script src="site/main.js"></script>
 <script src="site/yours.js"></script>
