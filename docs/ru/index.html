@@ -32,6 +32,7 @@
     <a class="brand" href="./" aria-label="ClaudeBoard"><img src="../site/icon-64.png" alt=""><span>ClaudeBoard</span></a>
     <div class="links">
       <a href="#try">Попробовать</a>
+      <a href="#yours">Ваши цифры</a>
       <a href="#features">Возможности</a>
       <a href="https://github.com/aidarkazybekov/claude-board/blob/main/docs/GUIDE.md">Гайд</a>
       <a href="https://github.com/aidarkazybekov/claude-board">GitHub</a>
@@ -114,6 +115,41 @@
     <div class="play-cta reveal">
       <p>Это настоящее приложение, только без ваших проектов.</p>
       <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Скачать для Mac</a>
+    </div>
+  </div>
+</section>
+
+<section class="yours" id="yours">
+  <div class="wrap">
+    <div class="yours-copy">
+      <h2 class="reveal">Что он найдёт на вашем Mac?</h2>
+      <p class="lead2 reveal">Укажите этой странице папку Claude Code. Она прочитает транскрипты прямо во вкладке и покажет, что ClaudeBoard вынесет на вашу доску. Сервера нет: ничего не загружается и не сохраняется.</p>
+      <ol class="yours-steps">
+        <li>Нажмите <strong>Выбрать папку Claude</strong>.</li>
+        <li>В окне выбора нажмите <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd>, вставьте <code>~/.claude/projects</code> <button type="button" class="mini-copy" data-yours="path">Копировать</button> и нажмите Return.</li>
+        <li>Нажмите <strong>Загрузить</strong>. Так браузер называет разрешение странице прочитать папку. Отправлять её некуда: у страницы нет сервера, и вкладка «Сеть» в инструментах разработчика останется пустой.</li>
+      </ol>
+      <div class="yours-go">
+        <button type="button" class="btn btn-primary" id="yours-pick">Выбрать папку Claude</button>
+        <input type="file" id="yours-input" class="sr" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
+        <span>или перетащите папку на карточку</span>
+      </div>
+      <p class="yours-mobile">Откройте эту страницу на Mac, где вы работаете с Claude Code, чтобы увидеть свои цифры.</p>
+    </div>
+    <div class="yours-card" id="yours-card" data-state="idle" aria-live="polite">
+      <div class="y-idle">
+        <div class="y-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p><strong>Здесь появятся ваши цифры</strong>Запросы, сессии, проекты, лучшая серия дней и сессии, где Claude всё ещё ждёт вашего ответа.</p>
+      </div>
+      <div class="y-reading"><div class="y-track"><i id="yours-bar"></i></div></div>
+      <p class="y-status" id="yours-status"></p>
+      <div class="y-result" id="yours-result"></div>
+      <div class="y-actions">
+        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Получить живую доску</a>
+        <button type="button" class="btn btn-ghost" data-yours="share">Скопировать мои цифры</button>
+        <button type="button" class="y-clear" data-yours="clear">Очистить</button>
+      </div>
+      <p class="y-fine">Посчитано по правилам приложения. Приложение ещё читает историю запросов Claude Code, поэтому может найти больше. «Скопировать мои цифры» не включает названия проектов.</p>
     </div>
   </div>
 </section>
@@ -248,5 +284,6 @@
 </footer>
 
 <script src="../site/main.js"></script>
+<script src="../site/yours.js"></script>
 </body>
 </html>

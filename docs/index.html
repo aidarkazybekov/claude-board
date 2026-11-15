@@ -32,6 +32,7 @@
     <a class="brand" href="./" aria-label="ClaudeBoard"><img src="site/icon-64.png" alt=""><span>ClaudeBoard</span></a>
     <div class="links">
       <a href="#try">Try it</a>
+      <a href="#yours">Your numbers</a>
       <a href="#features">Features</a>
       <a href="https://github.com/aidarkazybekov/claude-board/blob/main/docs/GUIDE.md">Guide</a>
       <a href="https://github.com/aidarkazybekov/claude-board">GitHub</a>
@@ -114,6 +115,41 @@
     <div class="play-cta reveal">
       <p>That's the real thing, minus your own projects.</p>
       <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac</a>
+    </div>
+  </div>
+</section>
+
+<section class="yours" id="yours">
+  <div class="wrap">
+    <div class="yours-copy">
+      <h2 class="reveal">What would it find on your Mac?</h2>
+      <p class="lead2 reveal">Point this page at your Claude Code folder. It reads the transcripts right here in the tab and shows what ClaudeBoard would put on your board. There is no server: nothing is uploaded or saved.</p>
+      <ol class="yours-steps">
+        <li>Click <strong>Choose your Claude folder</strong>.</li>
+        <li>In the dialog, press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd>, paste <code>~/.claude/projects</code> <button type="button" class="mini-copy" data-yours="path">Copy</button> and press Return.</li>
+        <li>Click <strong>Upload</strong>. That's the browser's word for letting a page read a folder. This page has no server to send it to; the Network tab in your browser's developer tools stays empty.</li>
+      </ol>
+      <div class="yours-go">
+        <button type="button" class="btn btn-primary" id="yours-pick">Choose your Claude folder</button>
+        <input type="file" id="yours-input" class="sr" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
+        <span>or drop the folder on the card</span>
+      </div>
+      <p class="yours-mobile">Open this page on the Mac where you use Claude Code to see your own numbers.</p>
+    </div>
+    <div class="yours-card" id="yours-card" data-state="idle" aria-live="polite">
+      <div class="y-idle">
+        <div class="y-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p><strong>Your numbers appear here</strong>Requests, sessions, projects, your best streak, and the sessions where Claude is still waiting on you.</p>
+      </div>
+      <div class="y-reading"><div class="y-track"><i id="yours-bar"></i></div></div>
+      <p class="y-status" id="yours-status"></p>
+      <div class="y-result" id="yours-result"></div>
+      <div class="y-actions">
+        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Get the live board</a>
+        <button type="button" class="btn btn-ghost" data-yours="share">Copy my numbers</button>
+        <button type="button" class="y-clear" data-yours="clear">Clear</button>
+      </div>
+      <p class="y-fine">Counted with the app's rules. The app also reads Claude Code's prompt history, so it can find more. "Copy my numbers" leaves out project names.</p>
     </div>
   </div>
 </section>
@@ -248,5 +284,6 @@
 </footer>
 
 <script src="site/main.js"></script>
+<script src="site/yours.js"></script>
 </body>
 </html>
