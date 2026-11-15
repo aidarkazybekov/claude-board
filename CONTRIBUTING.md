@@ -77,6 +77,12 @@ These keep the app trustworthy. Please don't break them in a PR:
   project names.
 - CI builds the app and runs the self-test on every PR.
 
+## Releases (maintainers)
+
+Attach the zip twice: as `ClaudeBoard-<version>-macOS-arm64.zip`, and as
+`ClaudeBoard-macOS-arm64.zip`. The second name is what the website's and README's one-click
+"Download for Mac" links point to (`releases/latest/download/ClaudeBoard-macOS-arm64.zip`).
+
 ## Privacy when reporting
 
 Transcripts, `--dump` output and screenshots can contain your prompts, file paths, client names and

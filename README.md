@@ -17,6 +17,8 @@ It shows two kinds of tickets on one board:
 Mention a task's key in any Claude prompt ("look at T-015", "[WEB-3] …") and that session is
 linked to the task, so the task shows Claude's live activity.
 
+**[Website](https://aidarkazybekov.github.io/claude-board/) · [Download for Mac](https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip) · [Guide](docs/GUIDE.md)**
+
 ![ClaudeBoard: board with Claude sessions and planned tasks](docs/media/cover.png)
 
 > Community project. Not affiliated with or endorsed by Anthropic. "Claude" is a trademark of
@@ -29,9 +31,9 @@ the same Mac.
 
 ### Download
 
-1. Get `ClaudeBoard-<version>-macOS-arm64.zip` from
-   [Releases](../../releases/latest). The build is for Apple Silicon; Intel Macs should build from
-   source.
+1. [Download the latest build](https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip)
+   (or pick a version from [Releases](../../releases)). The build is for Apple Silicon; Intel Macs
+   should build from source.
 2. Unzip it and move `ClaudeBoard.app` to `/Applications` or `~/Applications`.
 3. The app is not notarized. The first time, right-click it and choose **Open**, or run:
    ```bash
