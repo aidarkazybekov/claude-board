@@ -118,6 +118,92 @@
   .trust strong { font-size: 15px; }
   .trust span { font-size: 14px; color: var(--muted); }
 
+
+  /* Live demo board */
+  .play { padding: 88px 0 8px; }
+  .play h2 { max-width: 20ch; }
+  .play .lead2 { margin-top: 12px; color: var(--muted); max-width: 58ch; }
+  .mini {
+    --todo: #73809a; --prog: #3880f5; --needs: #f58c1f; --done: #3da85c;
+    position: relative; margin-top: 32px; border-radius: var(--radius); overflow: hidden;
+    background: var(--surface); outline: 1px solid var(--line); box-shadow: var(--shadow);
+    font-size: 13px; line-height: 1.4; user-select: none; -webkit-user-select: none;
+  }
+  .mini-bar { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  .mini-bar .lights { display: flex; gap: 7px; }
+  .mini-bar .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .mini-bar .lights i:nth-child(1) { background: #ff5f57; } .mini-bar .lights i:nth-child(2) { background: #febc2e; } .mini-bar .lights i:nth-child(3) { background: #28c840; }
+  .mini-bar strong { font-size: 13px; }
+  .mini-bar .hint { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .mini-bar button { font: inherit; font-size: 12px; font-weight: 600; color: var(--text); background: transparent; border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .mini-bar button:hover { background: var(--surface); }
+  .mini-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); height: 470px; position: relative; }
+  .mini-side { border-right: 1px solid var(--line); padding: 14px 10px; display: flex; flex-direction: column; gap: 3px; background: var(--surface-2); }
+  .mini-side h4 { margin: 10px 8px 4px; font-size: 11px; color: var(--muted); font-weight: 600; }
+  .mini-side .row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 7px; }
+  .mini-side .row b { margin-left: auto; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; transition: color .3s; }
+  .mini-side .row b.bump { color: var(--needs); }
+  .mini-side .sw { width: 9px; height: 9px; border-radius: 3px; }
+  .mini-board { display: grid; grid-template-columns: repeat(4, minmax(170px, 1fr)); gap: 10px; padding: 12px; overflow-x: auto; }
+  .col { display: flex; flex-direction: column; min-height: 0; border-radius: 10px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); outline: 1px solid transparent; transition: outline-color .15s, background .15s; }
+  .col.over { outline: 2px solid var(--c); background: color-mix(in srgb, var(--c) 10%, var(--surface-2)); }
+  .col header { display: flex; align-items: center; gap: 7px; padding: 10px 10px 8px; font-weight: 600; }
+  .col header i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+  .col header span { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .col .cards { display: flex; flex-direction: column; gap: 8px; padding: 0 8px 10px; overflow-y: auto; flex: 1; }
+  .tcard { text-align: left; font: inherit; color: inherit; border: 0; cursor: grab; display: flex; flex-direction: column; gap: 6px;
+           padding: 10px 11px; border-radius: 9px; background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / .12); outline: 1px solid var(--line);
+           transition: transform .15s, box-shadow .15s, outline-color .15s; touch-action: manipulation; }
+  .tcard:hover { box-shadow: 0 4px 14px -4px rgb(0 0 0 / .25); }
+  .tcard.sel { outline: 2px solid var(--accent); }
+  .tcard.placeholder { opacity: .35; }
+  .tcard.landed { animation: land .5s cubic-bezier(.16,1,.3,1); }
+  .tcard.flash { animation: flash 1.6s ease-out; }
+  .tcard .top { display: flex; align-items: center; gap: 6px; font: 11px ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
+  .tcard .top .dot { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: #34c759; }
+  .tcard .t { font-size: 13px; font-weight: 500; }
+  .tcard .ask { color: var(--needs); font-size: 12px; }
+  .tcard .meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 11px; }
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 2px; background: var(--pc, var(--faint)); }
+  .ghost { position: fixed; z-index: 30; pointer-events: none; transform-origin: 0 0; box-shadow: 0 18px 40px -10px rgb(0 0 0 / .45); rotate: 2deg; }
+  .mini-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 320px; background: var(--surface); border-left: 1px solid var(--line);
+                 box-shadow: -20px 0 40px -20px rgb(0 0 0 / .35); padding: 16px 18px; overflow-y: auto; transform: translateX(105%);
+                 transition: transform .32s cubic-bezier(.16,1,.3,1); }
+  .mini-drawer.open { transform: none; }
+  .mini-drawer .x { position: absolute; top: 12px; right: 12px; font: inherit; font-size: 12px; background: var(--surface-2); color: var(--muted); border: 0; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  .mini-drawer h5 { margin: 6px 0 10px; font-size: 16px; line-height: 1.3; padding-right: 40px; }
+  .mini-drawer .k { font: 11px ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
+  .mini-drawer .lbl { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .mini-drawer .box { padding: 9px 11px; border-radius: 8px; background: var(--surface-2); }
+  .mini-drawer .askbox { background: color-mix(in srgb, var(--needs) 14%, transparent); }
+  .mini-drawer .askbox b { color: var(--needs); display: block; font-size: 12px; margin-bottom: 2px; }
+  .mini-drawer .step { display: flex; gap: 8px; align-items: flex-start; padding: 3px 0; cursor: pointer; }
+  .mini-drawer .step input { margin: 2px 0 0; accent-color: var(--done); }
+  .mini-drawer .step.ok span { text-decoration: line-through; color: var(--muted); }
+  .mini-drawer .moves { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mini-drawer .moves button { font: inherit; font-size: 12px; border: 0; border-radius: 999px; padding: 4px 10px; cursor: pointer; color: var(--text); box-shadow: inset 0 0 0 1px var(--line); background: transparent; }
+  .mini-drawer .moves button[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .mini-drawer .note { margin-top: 14px; font-size: 11.5px; color: var(--muted); }
+  .play-cta { display: flex; align-items: center; gap: 18px; margin-top: 22px; flex-wrap: wrap; }
+  .play-cta p { color: var(--muted); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @keyframes land { from { transform: scale(1.04); } to { transform: none; } }
+  @keyframes flash { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--needs) 70%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .tcard .top .dot.busy { animation: pulse 1.6s ease-out infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgb(52 199 89 / .6); } 100% { box-shadow: 0 0 0 7px rgb(52 199 89 / 0); } }
+  }
+  @media (prefers-reduced-motion: reduce) { .tcard.landed, .tcard.flash { animation: none; } .mini-drawer { transition: none; } }
+  @media (max-width: 900px) {
+    .mini-body { grid-template-columns: 1fr; height: 460px; }
+    .mini-side { display: none; }
+    .mini-board { grid-template-columns: repeat(4, 78%); scroll-snap-type: x mandatory; }
+    .col { scroll-snap-align: start; }
+    .mini-drawer { width: 100%; }
+    .mini-bar .hint { display: none; }
+  }
+
   /* Video */
   .video { padding: 96px 0 24px; }
   .video h2 { max-width: 18ch; }
@@ -226,6 +312,7 @@
   <div class="wrap">
     <a class="brand" href="./"><img src="site/icon-64.png" alt="">ClaudeBoard</a>
     <div class="links">
+      <a href="#try">Try it</a>
       <a href="#features">Features</a>
       <a href="https://github.com/aidarkazybekov/claude-board/blob/main/docs/GUIDE.md">Guide</a>
       <a href="https://github.com/aidarkazybekov/claude-board">GitHub</a>
@@ -260,6 +347,43 @@
       <li><strong>Read-only with Claude</strong><span>It reads Claude Code's logs and never changes them</span></li>
       <li><strong>Local only</strong><span>No account, no server, no analytics</span></li>
     </ul>
+  </div>
+</section>
+
+<section class="play" id="try">
+  <div class="wrap">
+    <h2 class="reveal">Try the board right here.</h2>
+    <p class="lead2 reveal">A live copy of the demo board. Drag a card to another column, open one to see Claude's plan, and watch a session stop to ask you something.</p>
+    <div class="mini reveal" id="mini">
+      <div class="mini-bar">
+        <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <strong>All Projects</strong>
+        <span class="hint">Drag cards, click to open</span>
+        <button type="button" id="mini-replay">Replay</button>
+      </div>
+      <div class="mini-body">
+        <aside class="mini-side" aria-label="Sidebar">
+          <div class="row">Needs You <b id="cnt-needs">1</b></div>
+          <div class="row">In Progress <b id="cnt-prog">2</b></div>
+          <h4>Running now</h4>
+          <div class="row" id="run-list"></div>
+          <h4>Projects</h4>
+          <div class="row"><i class="sw" style="background:#4078f2"></i>web</div>
+          <div class="row"><i class="sw" style="background:#945ce6"></i>api</div>
+          <div class="row"><i class="sw" style="background:#e6548c"></i>billing</div>
+          <div class="row"><i class="sw" style="background:#21a3a3"></i>mobile</div>
+          <div class="row"><i class="sw" style="background:#f28c33"></i>infra</div>
+          <div class="row"><i class="sw" style="background:#4da854"></i>recipe-bot</div>
+        </aside>
+        <div class="mini-board" id="mini-board"></div>
+        <aside class="mini-drawer" id="mini-drawer" aria-label="Ticket details"></aside>
+      </div>
+      <p class="sr" id="mini-live" aria-live="polite"></p>
+    </div>
+    <div class="play-cta reveal">
+      <p>That's the real thing, minus your own projects.</p>
+      <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac</a>
+    </div>
   </div>
 </section>
 
@@ -393,6 +517,156 @@
 </footer>
 
 <script>
+  // Interactive mini board: drag cards, open details, and a scripted "live" moment when it scrolls into view.
+  (function () {
+    var board = document.getElementById('mini-board');
+    if (!board) return;
+    var drawer = document.getElementById('mini-drawer');
+    var live = document.getElementById('mini-live');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var COLS = [['todo', 'To Do', 'var(--todo)'], ['prog', 'In Progress', 'var(--prog)'], ['needs', 'Needs You', 'var(--needs)'], ['done', 'Done', 'var(--done)']];
+    var PC = { web: '#4078f2', api: '#945ce6', billing: '#e6548c', mobile: '#21a3a3', infra: '#f28c33', 'recipe-bot': '#4da854' };
+    function fresh() {
+      return [
+        { id: 'WEB-2', title: 'Checkout redesign: one column on mobile', project: 'web', status: 'prog', busy: true, link: 'T-004',
+          request: 'Work on T-004: redesign the checkout. One column on mobile, order summary in a sidebar on desktop.',
+          steps: [['Audit current components', 1], ['Build the responsive layout', 1], ['Move order summary to a sidebar', 0], ['Update Playwright tests', 0]] },
+        { id: 'API-2', title: 'Shared rate-limit store across instances', project: 'api', status: 'prog', busy: true, link: 'T-006',
+          request: 'The limiter state lives in memory, so it breaks with 3 instances. Look at T-006 and propose a fix.',
+          steps: [['Read the current limiter', 1], ['Compare Redis with sticky sessions', 0]] },
+        { id: 'BIL-1', title: 'Stripe webhooks fail after retries', project: 'billing', status: 'needs',
+          ask: 'Reproduce with the Stripe CLI first, or patch the handler now?',
+          request: 'Investigate the failed Stripe webhooks from last weekend (T-002).' },
+        { id: 'WEB-7', title: 'Faster product images (AVIF, lazy loading)', project: 'web', status: 'todo', mine: true,
+          request: 'Your task, planned before Claude knows about it.', steps: [['AVIF in the image CDN', 0], ['Lazy loading below the fold', 0]] },
+        { id: 'RB-1', title: 'Add Spanish recipes to the catalogue', project: 'recipe-bot', status: 'todo', mine: true,
+          request: 'Start with 30 dishes. Keep the same JSON schema.', steps: [['Pick 30 recipes', 0], ['Translate titles', 0], ['Add photos', 0]] },
+        { id: 'INF-1', title: 'Cut staging costs by half', project: 'infra', status: 'done',
+          request: 'Staging costs doubled last month. Find out why and cut it.', recap: 'Removed two idle GPU nodes and scaled staging to zero at night: about 55% cheaper.' },
+        { id: 'MOB-1', title: 'Push opt-in after the first order', project: 'mobile', status: 'done',
+          request: 'Add a push-notification opt-in screen after the first order.', recap: 'Opt-in screen after the first order, plus analytics events.' }
+      ];
+    }
+    var tickets = fresh(), openId = null, timers = [];
+    function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function find(id) { return tickets.filter(function (t) { return t.id === id; })[0]; }
+    function progress(t) { if (!t.steps) return ''; var d = t.steps.filter(function (s) { return s[1]; }).length; return d + '/' + t.steps.length; }
+
+    function render(effects) {
+      effects = effects || {};
+      board.innerHTML = COLS.map(function (c) {
+        var list = tickets.filter(function (t) { return t.status === c[0]; });
+        return '<section class="col" data-status="' + c[0] + '" style="--c:' + c[2] + '"><header><i></i>' + c[1] + ' <span>' + list.length + '</span></header><div class="cards">' +
+          list.map(function (t) {
+            var cls = 'tcard' + (t.id === openId ? ' sel' : '') + (effects.landed === t.id ? ' landed' : '') + (effects.flash === t.id ? ' flash' : '');
+            return '<button type="button" class="' + cls + '" data-id="' + t.id + '" aria-label="' + esc(t.id + ': ' + t.title) + '">' +
+              '<span class="top">' + t.id + (t.busy ? '<span class="dot busy" title="Claude is working"></span>' : '') + '</span>' +
+              '<span class="t">' + esc(t.title) + '</span>' +
+              (t.status === 'needs' && t.ask ? '<span class="ask">' + esc(t.ask) + '</span>' : '') +
+              '<span class="meta"><span class="chip" style="--pc:' + PC[t.project] + '">' + t.project + '</span>' + (t.steps ? '<span>' + progress(t) + '</span>' : '') + (t.mine ? '<span>Your task</span>' : '') + '</span>' +
+              '</button>';
+          }).join('') + '</div></section>';
+      }).join('');
+      var needs = tickets.filter(function (t) { return t.status === 'needs'; }).length;
+      var cn = document.getElementById('cnt-needs');
+      if (cn && cn.textContent !== String(needs)) { cn.textContent = needs; cn.classList.add('bump'); setTimeout(function () { cn.classList.remove('bump'); }, 1600); }
+      var cp = document.getElementById('cnt-prog'); if (cp) cp.textContent = tickets.filter(function (t) { return t.status === 'prog'; }).length;
+      var run = document.getElementById('run-list');
+      var busy = tickets.filter(function (t) { return t.busy; }).length;
+      if (run) run.textContent = busy === 0 ? 'Nothing running' : busy + (busy === 1 ? ' session busy' : ' sessions busy');
+      if (openId) renderDrawer();
+    }
+
+    function renderDrawer() {
+      var t = find(openId); if (!t) return;
+      var col = COLS.filter(function (c) { return c[0] === t.status; })[0];
+      drawer.innerHTML = '<button type="button" class="x" data-close>Close</button>' +
+        '<div class="k">' + t.id + (t.link ? '  linked to ' + t.link : '') + '</div><h5>' + esc(t.title) + '</h5>' +
+        '<span class="chip" style="--pc:' + PC[t.project] + '">' + t.project + '</span> <span class="chip" style="--pc:' + col[2] + '">' + col[1] + '</span>' +
+        (t.status === 'needs' && t.ask ? '<div class="lbl">Claude is waiting on you</div><div class="box askbox"><b>Question</b>' + esc(t.ask) + '</div>' : '') +
+        '<div class="lbl">' + (t.mine ? 'Task' : 'Request') + '</div><div class="box">' + esc(t.request) + '</div>' +
+        (t.steps ? '<div class="lbl">Plan ' + progress(t) + '</div>' + t.steps.map(function (s, i) {
+          return '<label class="step' + (s[1] ? ' ok' : '') + '"><input type="checkbox" data-step="' + i + '"' + (s[1] ? ' checked' : '') + '><span>' + esc(s[0]) + '</span></label>';
+        }).join('') : '') +
+        (t.recap ? '<div class="lbl">Outcome</div><div class="box">' + esc(t.recap) + '</div>' : '') +
+        '<div class="lbl">Move to</div><div class="moves">' + COLS.map(function (c) {
+          return '<button type="button" data-move="' + c[0] + '" aria-pressed="' + (c[0] === t.status) + '">' + c[1] + '</button>';
+        }).join('') + '</div>' +
+        '<p class="note">' + (t.mine ? 'In the app, Start with Claude hands this task to Claude Code with its key, so the session links back here.' : 'In the app, Resume reopens this session in Terminal.') + '</p>';
+      drawer.classList.add('open');
+    }
+
+    function move(id, status, why) {
+      var t = find(id); if (!t || t.status === status) return;
+      t.status = status; if (status !== 'prog') t.busy = false;
+      live.textContent = id + ' moved to ' + COLS.filter(function (c) { return c[0] === status; })[0][1] + (why ? '. ' + why : '');
+      render({ landed: id, flash: status === 'needs' ? id : null });
+    }
+
+    board.addEventListener('click', function (e) {
+      var card = e.target.closest('.tcard'); if (!card || card.dataset.dragged) { if (card) delete card.dataset.dragged; return; }
+      // Select without re-rendering the board, so the page doesn't jump under the pointer.
+      openId = card.dataset.id;
+      board.querySelectorAll('.tcard').forEach(function (c) { c.classList.toggle('sel', c === card); });
+      renderDrawer();
+    });
+    drawer.addEventListener('click', function (e) {
+      if (e.target.closest('[data-close]')) { openId = null; drawer.classList.remove('open'); render(); return; }
+      var m = e.target.closest('[data-move]'); if (m) { move(openId, m.dataset.move); return; }
+    });
+    drawer.addEventListener('change', function (e) {
+      var i = e.target.dataset.step; if (i === undefined) return;
+      var t = find(openId); t.steps[i][1] = e.target.checked ? 1 : 0; render();
+    });
+
+    // Pointer dragging (mouse and pen; on touch, cards open the details panel with "Move to").
+    var drag = null;
+    board.addEventListener('pointerdown', function (e) {
+      var card = e.target.closest('.tcard'); if (!card || e.pointerType === 'touch' || e.button !== 0) return;
+      drag = { id: card.dataset.id, card: card, x: e.clientX, y: e.clientY, started: false };
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      if (!drag.started) {
+        if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 6) return;
+        var r = drag.card.getBoundingClientRect();
+        drag.dx = drag.x - r.left; drag.dy = drag.y - r.top;
+        drag.ghost = drag.card.cloneNode(true); drag.ghost.classList.add('ghost'); drag.ghost.style.width = r.width + 'px';
+        document.body.appendChild(drag.ghost); drag.card.classList.add('placeholder'); drag.started = true;
+      }
+      drag.ghost.style.left = (e.clientX - drag.dx) + 'px'; drag.ghost.style.top = (e.clientY - drag.dy) + 'px';
+      var over = document.elementFromPoint(e.clientX, e.clientY); var col = over && over.closest('.col');
+      board.querySelectorAll('.col').forEach(function (c) { c.classList.toggle('over', c === col); });
+      drag.target = col ? col.dataset.status : null;
+    });
+    window.addEventListener('pointerup', function () {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (!d.started) return;
+      d.card.dataset.dragged = '1';
+      if (d.ghost) d.ghost.remove();
+      board.querySelectorAll('.col').forEach(function (c) { c.classList.remove('over'); });
+      if (d.target) move(d.id, d.target); else render();
+    });
+
+    // The scripted "live" moment: a busy session stops to ask, and a plan step completes.
+    function play() {
+      timers.forEach(clearTimeout); timers = [];
+      timers.push(setTimeout(function () { move('API-2', 'needs', 'Claude asked: Use Redis for the limiter, or sticky sessions?'); find('API-2').ask = 'Use Redis for the limiter, or sticky sessions?'; render({ flash: 'API-2' }); }, 2200));
+      timers.push(setTimeout(function () { var t = find('WEB-2'); if (t && t.steps) { t.steps[2][1] = 1; render({ landed: 'WEB-2' }); } }, 6200));
+    }
+    document.getElementById('mini-replay').addEventListener('click', function () {
+      tickets = fresh(); openId = null; drawer.classList.remove('open'); render(); play();
+    });
+    render();
+    if ('IntersectionObserver' in window) {
+      var seen = false;
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting && !seen) { seen = true; play(); } });
+      }, { threshold: 0.35 }).observe(document.getElementById('mini'));
+    } else { play(); }
+  })();
+
   // Reveal sections as they scroll in, and play the tour only while it is on screen.
   (function () {
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -401,6 +675,15 @@
         entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
       }, { threshold: 0.12 });
       document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+      // Safety net: anything already on screen (anchor links like #try, restored scroll) shows at once.
+      var showVisible = function () {
+        document.querySelectorAll('.reveal:not(.in)').forEach(function (el) {
+          var r = el.getBoundingClientRect();
+          if (r.top < innerHeight && r.bottom > 0) { el.classList.add('in'); io.unobserve(el); }
+        });
+      };
+      window.addEventListener('load', function () { requestAnimationFrame(showVisible); });
+      window.addEventListener('hashchange', function () { requestAnimationFrame(showVisible); });
 
       var video = document.getElementById('tour-video');
       if (video && !reduce) {
