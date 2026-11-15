@@ -29,16 +29,26 @@ linked to the task, so the task shows Claude's live activity.
 **Requirements:** macOS 15 Sequoia or later. Claude Code (CLI or the desktop app's Code tab) used on
 the same Mac.
 
-### Download
+### One-line install (recommended)
+
+```bash
+curl -fsSL https://aidarkazybekov.github.io/claude-board/install.sh | bash
+```
+
+It downloads the latest release and checks its SHA-256, installs `ClaudeBoard.app` into
+`/Applications` (or `~/Applications`), and opens it. Run it again to update.
+[Read the script](docs/install.sh) first if you like; it's about 70 lines.
+
+### Download the zip
 
 1. [Download the latest build](https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip)
-   (or pick a version from [Releases](../../releases)). The build is for Apple Silicon; Intel Macs
-   should build from source.
-2. Unzip it and move `ClaudeBoard.app` to `/Applications` or `~/Applications`.
-3. The app is not notarized. The first time, right-click it and choose **Open**, or run:
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/ClaudeBoard.app
-   ```
+   (or pick a version from [Releases](../../releases)). It's built for Apple Silicon; on Intel
+   Macs, build from source.
+2. Unzip it and move `ClaudeBoard.app` to Applications.
+3. The app isn't notarized yet, so macOS 15 blocks the first launch. Open it once, then go to
+   **System Settings → Privacy & Security** and click **Open Anyway**. The old right-click → Open
+   shortcut no longer works on macOS 15. Alternatively, run
+   `xattr -dr com.apple.quarantine /Applications/ClaudeBoard.app`.
 
 ### Build from source
 

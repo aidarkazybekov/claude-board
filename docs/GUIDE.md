@@ -17,8 +17,12 @@ so you can follow along without touching your own data: **Help → Try the Demo 
 
 ## 1. Install and first launch
 
-1. Download the latest release, unzip, and move `ClaudeBoard.app` to Applications.
-2. The app is not notarized yet. The first time, right-click it and choose **Open**.
+1. Install it with one line in Terminal:
+   `curl -fsSL https://aidarkazybekov.github.io/claude-board/install.sh | bash`.
+   Run the same line again later to update.
+2. Or download the zip, unzip it, and move `ClaudeBoard.app` to Applications. The app isn't
+   notarized yet: open it once, then click **Open Anyway** in **System Settings → Privacy &
+   Security**. macOS 15 removed the right-click → Open shortcut.
 3. On the welcome screen, pick the folders that hold your code (e.g. `~/Developer`). Every git repo
    inside becomes a project. You can change them later in **Settings → Project roots**.
 4. **Get Started** opens the in-app guide (also under **Help → ClaudeBoard Guide**, ⌘/).

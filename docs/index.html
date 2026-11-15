@@ -111,6 +111,21 @@
   }
   .hero .shot { width: 135%; max-width: none; }
 
+  /* One-line installer */
+  .install { padding: 4px 0 0; }
+  .install .wrap { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .install .label { font-weight: 600; font-size: 15px; }
+  .cmd { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1 1 520px; max-width: 760px;
+         background: var(--surface-2); border-radius: 999px; padding: 5px 5px 5px 18px; outline: 1px solid var(--line); }
+  .cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 13.5px ui-monospace, "SF Mono", Menlo, monospace;
+              color: var(--text); user-select: all; -webkit-user-select: all; scrollbar-width: none; }
+  .cmd code::-webkit-scrollbar { display: none; }
+  .cmd code .p { color: var(--faint); user-select: none; -webkit-user-select: none; }
+  .cmd button { flex: none; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: 0; border-radius: 999px;
+                height: 32px; padding: 0 14px; background: var(--accent); color: var(--accent-ink); }
+  .cmd button:active { transform: scale(.97); }
+  .install .why { color: var(--muted); font-size: 14px; flex-basis: 100%; }
+
   /* Trust row */
   .trust { padding: 28px 0 8px; }
   .trust ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 12px 44px; }
@@ -340,6 +355,17 @@
   </div>
 </header>
 
+<section class="install" aria-label="Install from Terminal">
+  <div class="wrap">
+    <span class="label">Prefer Terminal?</span>
+    <div class="cmd">
+      <code><span class="p">$ </span><span id="install-text">curl -fsSL https://aidarkazybekov.github.io/claude-board/install.sh | bash</span></code>
+      <button type="button" id="copy-install">Copy</button>
+    </div>
+    <p class="why">Checks the download, installs to Applications and opens it, with no security prompt to click through. Run it again to update. <a href="https://github.com/aidarkazybekov/claude-board/blob/main/docs/install.sh">Read the script</a>.</p>
+  </div>
+</section>
+
 <section class="trust">
   <div class="wrap">
     <ul>
@@ -449,7 +475,7 @@
   <div class="wrap">
     <h2>Up and running in a minute.</h2>
     <ol>
-      <li><strong>Install</strong><p>Unzip, drag to Applications, then right-click and Open the first time.</p></li>
+      <li><strong>Install</strong><p>Paste the one-line installer into Terminal. Or download the zip and approve it once in System Settings.</p></li>
       <li><strong>Pick your folders</strong><p>Point it at where your code lives, like <code>~/Developer</code>. Every git repo becomes a project.</p></li>
       <li><strong>Keep working</strong><p>Use Claude Code as usual. The board fills in by itself every 20 seconds.</p></li>
     </ol>
@@ -473,8 +499,8 @@
         <p>macOS 15 or later on Apple Silicon, and Claude Code: the CLI or the desktop app's Code tab. Intel Macs can build it from source.</p>
       </details>
       <details>
-        <summary>macOS says it can't check the developer.</summary>
-        <p>The app isn't notarized yet. Right-click ClaudeBoard and choose Open the first time, or run <code>xattr -dr com.apple.quarantine ClaudeBoard.app</code>.</p>
+        <summary>macOS says it can't verify ClaudeBoard.</summary>
+        <p>The app isn't notarized yet. The one-line installer avoids this prompt. If you downloaded the zip, open the app once, then go to System Settings, Privacy &amp; Security and click Open Anyway. macOS 15 removed the old right-click Open shortcut.</p>
       </details>
       <details>
         <summary>Can my team share the task list?</summary>
@@ -665,6 +691,27 @@
         entries.forEach(function (e) { if (e.isIntersecting && !seen) { seen = true; play(); } });
       }, { threshold: 0.35 }).observe(document.getElementById('mini'));
     } else { play(); }
+  })();
+
+  // Copy the install command. Only say "Copied" when it really was.
+  (function () {
+    var btn = document.getElementById('copy-install');
+    var text = document.getElementById('install-text');
+    if (!btn || !text) return;
+    var reset;
+    function label(t) { btn.textContent = t; clearTimeout(reset); reset = setTimeout(function () { btn.textContent = 'Copy'; }, 2200); }
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents(text);
+      var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      if (ok) { sel.removeAllRanges(); label('Copied'); } else { label('Press \u2318C'); }
+    }
+    btn.addEventListener('click', function () {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text.textContent).then(function () { label('Copied'); }, fallback);
+      } else { fallback(); }
+    });
   })();
 
   // Reveal sections as they scroll in, and play the tour only while it is on screen.
