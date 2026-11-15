@@ -79,9 +79,14 @@ These keep the app trustworthy. Please don't break them in a PR:
 
 ## Releases (maintainers)
 
-Attach the zip twice: as `ClaudeBoard-<version>-macOS-arm64.zip`, and as
-`ClaudeBoard-macOS-arm64.zip`. The second name is what the website's and README's one-click
-"Download for Mac" links point to (`releases/latest/download/ClaudeBoard-macOS-arm64.zip`).
+Attach three files:
+
+- `ClaudeBoard-<version>-macOS-arm64.zip`
+- `ClaudeBoard-macOS-arm64.zip`: the same zip under a stable name. The website's and README's
+  one-click "Download for Mac" and `docs/install.sh` use
+  `releases/latest/download/ClaudeBoard-macOS-arm64.zip`.
+- `ClaudeBoard-macOS-arm64.zip.sha256`: `shasum -a 256 ClaudeBoard-macOS-arm64.zip > ClaudeBoard-macOS-arm64.zip.sha256`.
+  The installer refuses a zip that doesn't match it.
 
 ## Privacy when reporting
 
