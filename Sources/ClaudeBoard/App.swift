@@ -44,6 +44,7 @@ struct ClaudeBoardApp: App {
             }
             CommandGroup(replacing: .help) {
                 Button("ClaudeBoard Guide") { store.showGuide = true }.keyboardShortcut("/", modifiers: .command)
+                Button("What ClaudeBoard Found…") { store.showDiscovery = true }
                 if !Demo.isOn {
                     Button("Try the Demo Board") { DemoLauncher.open() }
                 }

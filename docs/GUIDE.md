@@ -25,7 +25,13 @@ so you can follow along without touching your own data: **Help → Try the Demo 
    Security**. macOS 15 removed the right-click → Open shortcut.
 3. On the welcome screen, pick the folders that hold your code (e.g. `~/Developer`). Every git repo
    inside becomes a project. You can change them later in **Settings → Project roots**.
-4. **Get Started** opens the in-app guide (also under **Help → ClaudeBoard Guide**, ⌘/).
+4. **Get Started** shows what ClaudeBoard found in your Claude Code history: how many requests,
+   sessions and projects, where most of your work went, and which sessions are waiting on you
+   right now. From there, jump straight to what needs you, plan your projects, or take the tour.
+   See it again any time under **Help → What ClaudeBoard Found**. The in-app guide is under
+   **Help → ClaudeBoard Guide** (⌘/).
+
+   <img src="media/discovery.jpg" alt="What ClaudeBoard found on first launch" width="520">
 
 ClaudeBoard needs Claude Code (the CLI or the desktop app's Code tab) used on the same Mac. It
 reads Claude Code's local logs; there is nothing to configure in Claude itself.

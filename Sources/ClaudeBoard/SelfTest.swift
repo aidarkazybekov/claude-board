@@ -226,10 +226,12 @@ enum SelfTest {
         print("Share your week")
         do {
             let now = Date()
+            // Anchor at 23:00 yesterday so "2h ago" and "3h ago" share a day whatever the clock says.
+            let base = Calendar.current.startOfDay(for: now).addingTimeInterval(-3600)
             func mk(_ id: String, _ proj: String, _ hoursAgo: Double, origin: TaskOrigin = .prompt, status: TaskStatus = .done,
                     tools: Int = 3, files: [String] = [], active: Double = 60) -> TaskItem {
                 var t = TaskItem(id: id, origin: origin, projectID: proj, sessionID: "s", title: id, prompt: id,
-                                 createdAt: now.addingTimeInterval(-hoursAgo * 3600), updatedAt: now, inferredStatus: status)
+                                 createdAt: base.addingTimeInterval(-hoursAgo * 3600), updatedAt: now, inferredStatus: status)
                 t.status = status
                 t.stats.toolCalls = tools
                 t.stats.filesTouched = files
@@ -250,6 +252,12 @@ enum SelfTest {
             check(w.files == 2 && w.toolCalls == 9 && w.done == 2 && w.activeSeconds == 180, "files are unique; tools, done and active time add up")
             check(w.projects.first?.name == "web" && w.projects.first?.count == 2 && w.projects.count == 2, "projects ranked by requests")
             check(w.busiestCount == 2, "busiest day found")
+
+            let d = DiscoveryStats.compute(items: items, sessions: [], project: { ProjectResolver.info(for: $0, settings: nil) })
+            check(d.requests == 4 && d.projects == 2 && d.plannedOpen == 0, "discovery counts all Claude requests, not planned or suggested (got \(d.requests))")
+            check(d.waiting == 1 && d.top.map(\.name) == ["api", "web"] && d.top.allSatisfy { $0.count == 2 },
+                  "discovery finds the waiting session and ranks projects (ties by name)")
+            check(d.since.map { abs($0.timeIntervalSince(base.addingTimeInterval(-24 * 10 * 3600))) < 1 } == true, "discovery dates the first request")
         }
 
         print("Refresh picks up changes")

@@ -160,7 +160,8 @@ struct OnboardingSheet: View {
                     if UserDefaults.standard.stringArray(forKey: Roots.defaultsKey) == nil { Roots.all = Roots.all }
                     store.refresh(rediscover: true)
                     dismiss()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { store.showGuide = true }
+                    // The first "aha": show what ClaudeBoard found in the user's Claude history.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { store.showDiscovery = true }
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)

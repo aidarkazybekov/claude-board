@@ -60,8 +60,9 @@ enum Marketing {
         }
         win.orderOut(nil)
 
-        // Sheets: guide and new task.
+        // Sheets: first-run discovery, guide and new task.
         for (name, view, w, h) in [
+            ("discovery", AnyView(DiscoverySheet()), 640.0, 560.0),
             ("guide", AnyView(GuideSheet()), 760.0, 410.0),
             ("new-task", AnyView(NewTaskSheet()), 580.0, 660.0),
         ] {
@@ -71,7 +72,7 @@ enum Marketing {
             sheet.contentView = NSHostingView(rootView: view.environment(store).frame(width: w, height: h)
                 .background(Color(nsColor: .windowBackgroundColor)))
             sheet.orderFrontRegardless()
-            try? await Task.sleep(for: .milliseconds(1200))
+            try? await Task.sleep(for: .milliseconds(name == "discovery" ? 2200 : 1200))
             await capture(sheet, "\(dir)/\(name).png")
             sheet.orderOut(nil)
         }

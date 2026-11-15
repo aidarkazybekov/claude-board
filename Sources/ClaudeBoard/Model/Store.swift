@@ -108,6 +108,7 @@ final class Store {
     var errorMessage: String?
     var showGuide = false
     var showShareWeek = false
+    var showDiscovery = false
 
     // Status
     private(set) var isRefreshing = false
