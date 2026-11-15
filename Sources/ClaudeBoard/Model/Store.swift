@@ -1014,6 +1014,7 @@ final class Store {
 
     /// Brings the main window forward on a ticket (or on Needs You), e.g. from a notification.
     func reveal(ticket id: String?, inbox: Bool) {
+        Startup.quietHandled = true
         if let id, let t = task(id) {
             sidebar = .project(t.projectID)
             selection = id

@@ -63,7 +63,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
 
     static var kinds: Set<StatusChange.Kind> {
         var k: Set<StatusChange.Kind> = []
-        if UserDefaults.standard.object(forKey: needsYouKey) as? Bool ?? true { k.insert(.needsYou) }
+        if UserDefaults.standard.object(forKey: needsYouKey) == nil || UserDefaults.standard.bool(forKey: needsYouKey) { k.insert(.needsYou) }
         if UserDefaults.standard.bool(forKey: doneKey) { k.insert(.done) }
         return k
     }

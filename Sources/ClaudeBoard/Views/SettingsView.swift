@@ -8,6 +8,7 @@ struct SettingsView: View {
         Form {
             RootsSection()
             FoldersSection()
+            StartupSection()
             NotificationsSection()
             Section("Claude Code data (read-only)") {
                 LabeledContent("Transcripts", value: Paths.tilde(Paths.projectsDir))
@@ -38,6 +39,42 @@ struct SettingsView: View {
 }
 
 /// Folders that hold projects. Every git repo inside becomes a project.
+struct StartupSection: View {
+    @AppStorage(Startup.dockKey) private var showInDock = true
+    @State private var login = Startup.loginItem
+    @State private var error: String?
+
+    var body: some View {
+        Section {
+            Toggle("Open ClaudeBoard at login", isOn: Binding(
+                get: { login == .on || login == .needsApproval },
+                set: { on in
+                    do { try Startup.setOpenAtLogin(on); error = nil } catch { self.error = error.localizedDescription }
+                    login = Startup.loginItem
+                }))
+                .disabled(login == .unavailable)
+            if login == .needsApproval {
+                HStack {
+                    Text("macOS needs your OK in Login Items.").font(.callout).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Open Login Items") { Startup.openLoginItemsSettings() }
+                }
+            }
+            if let error { Text(error).font(.caption).foregroundStyle(.red) }
+            Toggle("Show ClaudeBoard in the Dock", isOn: $showInDock)
+                .onChange(of: showInDock) { _, _ in Startup.applyDockPolicy() }
+        } header: {
+            Text("Menu bar and startup")
+        } footer: {
+            Text(login == .unavailable
+                 ? "Open at login works in the installed app, not in the demo or a `swift run` build."
+                 : "At login it starts quietly in the menu bar, so notifications keep coming. Without the Dock icon, open the board from the menu bar.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onAppear { login = Startup.loginItem }
+    }
+}
+
 struct NotificationsSection: View {
     @Environment(Store.self) private var store
     @AppStorage(Notifier.needsYouKey) private var needsYou = true

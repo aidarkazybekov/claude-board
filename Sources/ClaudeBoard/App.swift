@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ClaudeBoardApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var store: Store
 
     init() {
@@ -22,8 +23,9 @@ struct ClaudeBoardApp: App {
                 .environment(store)
         }
         .defaultSize(width: 1500, height: 900)
-        // Always show the main window at launch, whatever macOS saved about it at the last quit.
-        .defaultLaunchBehavior(.presented)
+        // Always show the main window at launch, whatever macOS saved about it at the last quit;
+        // except at login, where ClaudeBoard starts quietly in the menu bar.
+        .defaultLaunchBehavior(Startup.quiet ? .suppressed : .presented)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("New Task") {

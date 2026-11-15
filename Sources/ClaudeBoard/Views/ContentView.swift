@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.dismissWindow) private var dismissWindow
     @Environment(Store.self) private var store
 
     var body: some View {
@@ -37,6 +38,16 @@ struct ContentView: View {
         .onAppear {
             store.start()
             Snapshot.runIfRequested(store: store)
+            // Opened at login: stay in the menu bar, in case the window came up anyway while launching
+            // (e.g. restored). Later openings (menu bar, notification) set quietHandled first.
+            if Startup.quiet && !Startup.quietHandled && !Demo.isOn {
+                // A restored window is still being set up in onAppear; close it on the next turn.
+                DispatchQueue.main.async {
+                    dismissWindow(id: "main")
+                    NSApp.windows.filter { $0.identifier?.rawValue.hasPrefix("main") == true }.forEach { $0.close() }
+                    Store.debugLog("startup: closed the board window (quiet start)")
+                }
+            }
         }
         .frame(minWidth: 1000, minHeight: 600)
     }

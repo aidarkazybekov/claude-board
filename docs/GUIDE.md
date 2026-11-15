@@ -201,6 +201,10 @@ the sessions waiting on you, each with Claude's question and **Resume** / **Open
 Claude is working in, and today's requests, done and Claude time (click those to open the
 Worklog). Notifications reach you then too.
 
+**Settings → Menu bar and startup:** turn on **Open ClaudeBoard at login** and it starts quietly in
+the menu bar, so notifications keep coming. Turn off **Show ClaudeBoard in the Dock** to keep only
+the menu bar icon. Closing the board window never quits ClaudeBoard; quit from the menu bar or ⌘Q.
+
 ## 10. Privacy, data and troubleshooting
 
 - **Local only.** No account, no network requests. Claude Code's files are read, never changed.

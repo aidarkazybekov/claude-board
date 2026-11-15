@@ -201,6 +201,7 @@ struct MenuBarView: View {
     }
 
     private func open(_ id: String?) {
+        Startup.quietHandled = true
         openWindow(id: "main")
         NSApp.activate(ignoringOtherApps: true)
         if let id, let t = store.task(id) {
@@ -222,6 +223,7 @@ struct MenuBarLabel: View {
         }
         // The label is alive even with every window closed, so it reopens the board for notification clicks.
         .onChange(of: store.openMainRequest) { _, _ in
+            Startup.quietHandled = true
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
         }

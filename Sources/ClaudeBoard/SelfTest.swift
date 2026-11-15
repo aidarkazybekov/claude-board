@@ -295,6 +295,11 @@ enum SelfTest {
             check(StatusChanges.question(of: asked) == "Pick a database", "a pending ask wins over the reply text")
         }
 
+        print("Startup")
+        check(Startup.isLoginLaunch(eventID: 0x6F61_7070, launchProperty: 0x6C67_6974), "an 'oapp' event marked as login item is a login launch")
+        check(!Startup.isLoginLaunch(eventID: 0x6F61_7070, launchProperty: nil), "opening the app by hand is not a login launch")
+        check(!Startup.isLoginLaunch(eventID: nil, launchProperty: nil), "no launch event is not a login launch")
+
         print("Refresh picks up changes")
         let rr = tmp.appendingPathComponent("refresh-root").path
         let emptyClaude = tmp.appendingPathComponent("empty-claude").path
