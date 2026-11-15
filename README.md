@@ -1,45 +1,50 @@
+<div align="center">
+
+<img src="docs/site/icon-180.png" width="88" height="88" alt="">
+
 # ClaudeBoard
+
+### Everything you ask Claude Code, on one board.
+
+A native Mac app that turns your Claude Code sessions into tickets, next to the tasks you plan for
+each project. See what Claude is working on, what it finished, and which sessions are waiting on you.
 
 [![CI](https://github.com/aidarkazybekov/claude-board/actions/workflows/ci.yml/badge.svg)](https://github.com/aidarkazybekov/claude-board/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/aidarkazybekov/claude-board)](https://github.com/aidarkazybekov/claude-board/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+![macOS 15+](https://img.shields.io/badge/macOS-15%2B-black)
 
-A native macOS task board for your projects and for everything you ask
-[Claude Code](https://docs.anthropic.com/en/docs/claude-code). Think Jira/Asana, but it fills
-itself in from your Claude sessions.
+**[Download for Mac](https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip)** &nbsp;·&nbsp; **[Website](https://aidarkazybekov.github.io/claude-board/)** &nbsp;·&nbsp; **[See your own numbers](https://aidarkazybekov.github.io/claude-board/#yours)** &nbsp;·&nbsp; **[Guide](docs/GUIDE.md)**
 
-It shows two kinds of tickets on one board:
+<br>
 
-- **Your tasks**: what each project still needs, planned before Claude knows about it.
-- **Claude's work**: every request you gave Claude Code, read from its local logs, with its plan,
-  outcome, the files it edited, and whether it is waiting on you.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/site/hero-dark.jpg">
+  <img src="docs/site/hero-light.jpg" width="920" alt="ClaudeBoard: Claude Code sessions and planned tasks on one board, with a ticket's plan and outcome open on the right">
+</picture>
 
-Mention a task's key in any Claude prompt ("look at T-015", "[WEB-3] …") and that session is
-linked to the task, so the task shows Claude's live activity.
+<sub>Free and open source · Reads Claude Code's local logs, never changes them · No account, no server, no analytics</sub>
 
-**[Website](https://aidarkazybekov.github.io/claude-board/) · [Download for Mac](https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip) · [Guide](docs/GUIDE.md)**
+</div>
 
-![ClaudeBoard: board with Claude sessions and planned tasks](docs/media/cover.png)
-
-> Community project. Not affiliated with or endorsed by Anthropic. "Claude" is a trademark of
-> Anthropic.
-
-## Install
-
-**Requirements:** macOS 15 Sequoia or later. Claude Code (CLI or the desktop app's Code tab) used on
-the same Mac.
-
-### One-line install (recommended)
+## Install in one line
 
 ```bash
 curl -fsSL https://aidarkazybekov.github.io/claude-board/install.sh | bash
 ```
 
-It downloads the latest release and checks its SHA-256, installs `ClaudeBoard.app` into
-`/Applications` (or `~/Applications`), and opens it. Run it again to update.
+It downloads the latest release, checks its SHA-256, installs `ClaudeBoard.app` into `/Applications`
+(or `~/Applications`) and opens it, with no security prompt to click through. Run it again to update.
 [Read the script](docs/install.sh) first if you like; it's about 70 lines.
 
-### Download the zip
+**Needs** macOS 15 Sequoia or later and Claude Code (the CLI or the desktop app's Code tab) on the
+same Mac. On first launch, pick the folders that hold your code; every git repo inside becomes a
+project.
+
+<details>
+<summary><b>Other ways to install:</b> download the zip, or build from source</summary>
+
+#### Download the zip
 
 1. [Download the latest build](https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip)
    (or pick a version from [Releases](../../releases)). It's built for Apple Silicon; on Intel
@@ -50,7 +55,7 @@ It downloads the latest release and checks its SHA-256, installs `ClaudeBoard.ap
    shortcut no longer works on macOS 15. Alternatively, run
    `xattr -dr com.apple.quarantine /Applications/ClaudeBoard.app`.
 
-### Build from source
+#### Build from source
 
 Needs only the Xcode Command Line Tools (`xcode-select --install`), Swift 6.
 
@@ -63,24 +68,59 @@ scripts/build-app.sh          # builds, bundles, installs to ~/Applications
 On first launch, pick the folders that hold your projects (it suggests `~/Developer`,
 `~/Projects`, `~/code` and similar if they exist). Every git repo inside becomes a project.
 
-### Try it without your data
+</details>
 
-**Help → Try the Demo Board** opens a second window with a fictional company: a few apps,
-Claude sessions in every state, and a shared backlog. Click around, drag cards, add tasks.
-Nothing touches your real data. From source: `.build/debug/ClaudeBoard --demo`.
+## What it does
 
-## Tour
+<table>
+<tr>
+<td valign="middle">
 
-![Tour](docs/media/tour.gif)
+### Know when Claude is waiting on you
 
-New here? The **[guide](docs/GUIDE.md)** walks through every feature with screenshots. The same
-guide is in the app under **Help → ClaudeBoard Guide** (⌘/).
+**Needs You** gathers every session that ended on a question, with the question itself, the
+outcome so far and a **Resume** button. The menu bar shows the count even with the window closed.
 
-| Plan your tasks per project | See where Claude waits on you |
-|---|---|
-| ![Plan](docs/media/plan.png) | ![Needs you](docs/media/needs-you.png) |
-| **Worklog of what got done** | **Insights** |
-| ![Worklog](docs/media/worklog.png) | ![Insights](docs/media/insights.png) |
+</td>
+<td><img src="docs/site/needs-you.jpg" width="560" alt="Needs You: a session waiting on an answer, with Claude's question and a Resume button"></td>
+</tr>
+<tr>
+<td><img src="docs/site/plan.jpg" width="560" alt="Plan view: each project with its open tasks and an add-a-task line"></td>
+<td valign="middle">
+
+### Plan each project's tasks
+
+Write down what every app still needs before Claude knows about it. Keep the list in ClaudeBoard
+or as markdown files in the repo, where teammates and Claude read the same backlog. Mention a key
+like `T-015` in a prompt and the session links to the task.
+
+</td>
+</tr>
+<tr>
+<td valign="middle">
+
+### A worklog that writes itself
+
+Day by day: what you asked, what Claude did, how long it worked and which files it touched. Handy
+for stand-ups and timesheets. **Insights** charts when and where you work with Claude.
+
+</td>
+<td><img src="docs/site/worklog.jpg" width="560" alt="Worklog: requests and outcomes grouped by day, with active time"></td>
+</tr>
+</table>
+
+## Try it before you install
+
+- **In your browser:** [drag cards on a live copy of the board](https://aidarkazybekov.github.io/claude-board/#try), or
+  [point the site at your `~/.claude/projects` folder](https://aidarkazybekov.github.io/claude-board/#yours) to see what ClaudeBoard
+  would find. It's read in the tab; nothing is uploaded.
+- **In the app:** **Help → Try the Demo Board** opens a fictional company with Claude sessions in
+  every state and a shared backlog. Nothing touches your real data.
+
+<p align="center"><img src="docs/media/tour.gif" width="820" alt="A short tour: Plan, Board, a ticket waiting on you, Worklog and Insights"></p>
+
+The **[guide](docs/GUIDE.md)** walks through every feature with screenshots. It's also in the app
+under **Help → ClaudeBoard Guide** (⌘/).
 
 ## Features
 
@@ -96,7 +136,16 @@ guide is in the app under **Help → ClaudeBoard Guide** (⌘/).
 - **Start with Claude:** opens Terminal in the project folder and hands the task to Claude Code.
 - **Resume:** reopens a ticket's session with `claude --resume`.
 
-## Where your tasks live
+## Privacy
+
+Everything stays on your Mac. ClaudeBoard reads Claude Code's local files read-only. It writes
+only to its own data folder (`~/Library/Application Support/ClaudeBoard/`) and, when you edit
+them, to your backlog markdown files. It makes no network requests.
+
+## Reference
+
+<details>
+<summary><b>Where your tasks live</b>: this Mac, or a backlog folder in the repo</summary>
 
 | Storage | When | Who sees it |
 |---|---|---|
@@ -106,7 +155,10 @@ guide is in the app under **Help → ClaudeBoard Guide** (⌘/).
 "Keep Tasks in the Repo" (project menu) creates `<project>/backlog/` with a README and an index,
 and moves that project's local tasks into it.
 
-### Backlog folder format
+</details>
+
+<details>
+<summary><b>Backlog folder format</b>: one markdown file per task</summary>
 
 One markdown file per task with front matter, optionally indexed by a `BACKLOG.md` table:
 
@@ -140,7 +192,10 @@ Description in plain words.
   left byte-for-byte. A status keeps its original word while it stays in the same column. New
   tasks get the next id and an index row.
 
-## How Claude's work is read
+</details>
+
+<details>
+<summary><b>How Claude's work is read</b>: which local files, and how requests become tickets</summary>
 
 | Source | What it gives |
 |---|---|
@@ -156,13 +211,10 @@ Description in plain words.
 - While running, it refreshes every 20 s and reads only the new bytes. A first full scan of a few
   hundred MB of transcripts takes a few seconds.
 
-## Privacy
+</details>
 
-Everything stays on your Mac. ClaudeBoard reads Claude Code's local files read-only. It writes
-only to its own data folder (`~/Library/Application Support/ClaudeBoard/`) and, when you edit
-them, to your backlog markdown files. It makes no network requests.
-
-## Development
+<details>
+<summary><b>Development</b>: build, self-test, dump, snapshots, code layout</summary>
 
 ```bash
 swift build
@@ -194,6 +246,8 @@ Resources/  plotly-cartesian.min.js
 Claude Code's log format is not a public API and can change between versions. If tickets look
 wrong after an update, `--dump` shows what the parser sees. Issues and PRs welcome.
 
+</details>
+
 ## Contributing
 
 Ideas, bug reports and pull requests are welcome.
@@ -204,7 +258,11 @@ Ideas, bug reports and pull requests are welcome.
 - **New here?** Start with a
   [`good first issue`](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
+If ClaudeBoard saves you time, a star helps other Claude Code users find it.
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Bundles [plotly.js](https://github.com/plotly/plotly.js) (MIT,
 © Plotly, Inc.) in `Resources/`.
+
+<sub>Community project. Not affiliated with or endorsed by Anthropic. "Claude" is a trademark of Anthropic.</sub>
