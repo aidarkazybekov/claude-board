@@ -10,9 +10,24 @@ struct WorklogView: View {
         let days = Dictionary(grouping: tasks) { Calendar.current.startOfDay(for: $0.createdAt) }
             .sorted { $0.key > $1.key }
 
+        VStack(spacing: 0) {
+        HStack {
+            Text("What you asked and what Claude did, day by day.").font(.callout).foregroundStyle(.secondary)
+            Spacer()
+            Button {
+                store.showShareWeek = true
+            } label: {
+                Label("Share Your Week", systemImage: "square.and.arrow.up")
+            }
+            .help("Make a recap card of your week with Claude (⇧⌘S)")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        Divider()
         if days.isEmpty {
             ContentUnavailableView("No work in this period", systemImage: "calendar.badge.clock",
                                    description: Text("Widen the period or pick another project."))
+                .frame(maxHeight: .infinity)
         } else {
             List(selection: Binding(get: { store.selection }, set: { store.selection = $0; store.showInspector = true })) {
                 ForEach(days, id: \.key) { day, items in
@@ -27,6 +42,7 @@ struct WorklogView: View {
                 }
             }
             .listStyle(.inset)
+        }
         }
     }
 }

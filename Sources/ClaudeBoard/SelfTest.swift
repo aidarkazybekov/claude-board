@@ -223,6 +223,35 @@ enum SelfTest {
         Ingestor.inferStatuses(&wt, session: nil)
         check(wt.first?.inferredStatus == .done, "a turn that ends in a wrap-up summary counts as answered")
 
+        print("Share your week")
+        do {
+            let now = Date()
+            func mk(_ id: String, _ proj: String, _ hoursAgo: Double, origin: TaskOrigin = .prompt, status: TaskStatus = .done,
+                    tools: Int = 3, files: [String] = [], active: Double = 60) -> TaskItem {
+                var t = TaskItem(id: id, origin: origin, projectID: proj, sessionID: "s", title: id, prompt: id,
+                                 createdAt: now.addingTimeInterval(-hoursAgo * 3600), updatedAt: now, inferredStatus: status)
+                t.status = status
+                t.stats.toolCalls = tools
+                t.stats.filesTouched = files
+                t.stats.activeSeconds = active
+                return t
+            }
+            let items = [
+                mk("a", "/p/web", 2, files: ["/x/a.swift", "/x/b.swift"]),
+                mk("b", "/p/web", 3, status: .needsYou, files: ["/x/a.swift"]),
+                mk("c", "/p/api", 30),
+                mk("d", "/p/api", 24 * 10),                       // outside the 7-day window
+                mk("e", "/p/web", 1, origin: .manual),             // planned task: not a request
+                mk("f", "/p/web", 1, origin: .suggested),          // suggestion: not a request
+            ]
+            let (start, end) = SharePeriod.week.range(now: now)
+            let w = WeekSummary.compute(items: items, project: { ProjectResolver.info(for: $0, settings: nil) }, start: start, end: end)
+            check(w.requests == 3, "week counts only Claude requests in range (got \(w.requests))")
+            check(w.files == 2 && w.toolCalls == 9 && w.done == 2 && w.activeSeconds == 180, "files are unique; tools, done and active time add up")
+            check(w.projects.first?.name == "web" && w.projects.first?.count == 2 && w.projects.count == 2, "projects ranked by requests")
+            check(w.busiestCount == 2, "busiest day found")
+        }
+
         print("Refresh picks up changes")
         let rr = tmp.appendingPathComponent("refresh-root").path
         let emptyClaude = tmp.appendingPathComponent("empty-claude").path

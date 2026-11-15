@@ -75,6 +75,22 @@ enum Marketing {
             await capture(sheet, "\(dir)/\(name).png")
             sheet.orderOut(nil)
         }
+        // Share-your-week card, private and with project names, plus the share sheet.
+        let (ws, we) = SharePeriod.week.range()
+        let summary = WeekSummary.compute(items: store.items.filter { !$0.hidden }, project: store.project, start: ws, end: we)
+        for (name, names) in [("week-card", false), ("week-card-projects", true)] {
+            if let png = CardRenderer.png(WeekCard(summary: summary, heading: SharePeriod.week.heading, showProjects: names)) {
+                try? png.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+            }
+        }
+        let share = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: 520), styleMask: [.borderless], backing: .buffered, defer: false)
+        share.appearance = NSAppearance(named: .darkAqua)
+        share.contentView = NSHostingView(rootView: ShareWeekSheet().environment(store).frame(width: 680, height: 520)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        share.orderFrontRegardless()
+        try? await Task.sleep(for: .milliseconds(1200))
+        await capture(share, "\(dir)/share-sheet.png")
+        share.orderOut(nil)
         NSApp.terminate(nil)
     }
 

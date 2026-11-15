@@ -111,6 +111,18 @@ day. Handy for stand-ups and timesheets.
 **Insights** (⌘5) charts requests per day per project, tickets by status, and when in the week you
 work with Claude.
 
+### Share your week
+
+<img src="media/week-card.jpg" alt="A week recap card" width="420">
+
+**Share Your Week** (in the Worklog, or ⇧⌘S) turns the last 7 days, this week or the last 30 days
+into a recap card: requests, Claude's active time, tool calls, files edited, what got done and your
+busiest day. **Copy Image**, **Save PNG** or **Share** it.
+
+- **Project names are hidden by default.** They can reveal client or private work; turn them on
+  only if you want them on the card.
+- **Prompt text is never included.**
+
 ## 8. Backlog folders: tasks in the repo
 
 A backlog folder is plain markdown, one file per task:
@@ -159,6 +171,7 @@ Why it matters, what is unknown.
 | ⌘R | Refresh now (it also refreshes every 20 s) |
 | ⌘I | Show or hide details |
 | ⇧⌘1 / ⇧⌘0 | Needs You / All Projects |
+| ⇧⌘S | Share your week |
 | ⌘/ | This guide, in the app |
 
 The **menu bar** icon shows how many tickets need you and which sessions are busy, even with the

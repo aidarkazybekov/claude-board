@@ -38,6 +38,7 @@ struct ClaudeBoardApp: App {
                 }
                 Divider()
                 Button("Toggle Details") { store.showInspector.toggle() }.keyboardShortcut("i")
+                Button("Share Your Week…") { store.showShareWeek = true }.keyboardShortcut("s", modifiers: [.command, .shift])
                 Button("Needs You") { store.sidebar = .inbox }.keyboardShortcut("1", modifiers: [.command, .shift])
                 Button("All Projects") { store.sidebar = .all }.keyboardShortcut("0", modifiers: [.command, .shift])
             }

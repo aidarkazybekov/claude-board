@@ -107,6 +107,7 @@ final class Store {
     var lastQuickAddProject: String?
     var errorMessage: String?
     var showGuide = false
+    var showShareWeek = false
 
     // Status
     private(set) var isRefreshing = false
