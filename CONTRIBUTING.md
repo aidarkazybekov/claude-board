@@ -39,6 +39,9 @@ CLAUDEBOARD_DATA_DIR=$(mktemp -d) .build/debug/ClaudeBoard --selftest
 # Log every refresh (counts, timing) while the app runs, e.g. when tasks don't show up.
 CLAUDEBOARD_LOG=/tmp/claudeboard.log .build/debug/ClaudeBoard
 
+# Notifications need the app bundle. Log them instead of showing them (no permission prompt):
+CLAUDEBOARD_LOG=/tmp/claudeboard.log CLAUDEBOARD_NOTIFY_DRYRUN=1 build/ClaudeBoard.app/Contents/MacOS/ClaudeBoard
+
 # Render every screen to PNGs, handy for UI PRs.
 .build/debug/ClaudeBoard --snapshot /tmp/cb-shots
 

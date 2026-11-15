@@ -96,11 +96,17 @@ struct MenuBarView: View {
 
 struct MenuBarLabel: View {
     @Environment(Store.self) private var store
+    @Environment(\.openWindow) private var openWindow
     var body: some View {
         let n = store.count(.inbox)
         HStack(spacing: 3) {
             Image(systemName: n > 0 ? "checklist.unchecked" : "checklist")
             if n > 0 { Text("\(n)") }
+        }
+        // The label is alive even with every window closed, so it reopens the board for notification clicks.
+        .onChange(of: store.openMainRequest) { _, _ in
+            openWindow(id: "main")
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }

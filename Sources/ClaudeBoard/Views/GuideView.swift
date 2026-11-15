@@ -59,7 +59,8 @@ enum Guide {
                   points: [
                       "The **menu bar** icon shows how many tickets need you, and which sessions are busy.",
                       "**Needs You** in the sidebar is your inbox: every place Claude is waiting.",
-                      "**Settings:** project folders, backlog folders, refresh interval.",
+                      "A **notification** tells you when Claude stops to ask you something; click it to open the ticket, or Resume in Terminal.",
+                      "**Settings:** project folders, backlog folders, notifications, refresh interval.",
                       "Everything stays on your Mac. Claude Code's files are only read, never changed.",
                   ], visual: .stayOnTop),
     ]

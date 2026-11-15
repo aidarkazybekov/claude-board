@@ -8,6 +8,7 @@ struct SettingsView: View {
         Form {
             RootsSection()
             FoldersSection()
+            NotificationsSection()
             Section("Claude Code data (read-only)") {
                 LabeledContent("Transcripts", value: Paths.tilde(Paths.projectsDir))
                 LabeledContent("Prompt history", value: Paths.tilde(Paths.historyFile))
@@ -37,6 +38,43 @@ struct SettingsView: View {
 }
 
 /// Folders that hold projects. Every git repo inside becomes a project.
+struct NotificationsSection: View {
+    @Environment(Store.self) private var store
+    @AppStorage(Notifier.needsYouKey) private var needsYou = true
+    @AppStorage(Notifier.doneKey) private var done = false
+
+    var body: some View {
+        Section {
+            Toggle("When Claude is waiting on you", isOn: $needsYou)
+            Toggle("When Claude finishes a request", isOn: $done)
+            if !Notifier.available {
+                Text("Notifications work in the installed app, not in the demo or a `swift run` build.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if store.notificationsAllowed == false {
+                HStack {
+                    Text("macOS has notifications turned off for ClaudeBoard.").font(.callout).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Open Notification Settings") { Notifier.openSystemSettings() }
+                }
+            } else {
+                HStack {
+                    Text(store.notificationsAllowed == nil ? "macOS asks for permission the first time one is sent."
+                                                           : "Click one to open its ticket. Resume in Terminal answers right away.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Send a Test Notification") { Notifier.shared.sendTest() }
+                }
+            }
+        } header: {
+            Text("Notifications")
+        } footer: {
+            Text("Only real changes while ClaudeBoard runs: nothing at launch, never the same question twice.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onAppear { Notifier.shared.refreshAuthorization() }
+    }
+}
+
 struct RootsSection: View {
     @Environment(Store.self) private var store
     @State private var roots: [String] = Roots.all

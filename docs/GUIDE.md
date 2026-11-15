@@ -78,6 +78,18 @@ counted as new tickets.
 
 **Resume** reopens that session in Terminal (`claude --resume`) so you can answer.
 
+### Notifications
+
+You don't have to watch the board. When a session stops to ask you something, ClaudeBoard sends
+a macOS notification with Claude's question. Click it to open the ticket, or choose **Resume in
+Terminal** to answer right away.
+
+- **Settings → Notifications** has a toggle for "waiting on you" (on) and "Claude finished" (off).
+  **Send a Test Notification** shows what one looks like.
+- macOS asks for permission the first time one is sent, not at launch.
+- Only real changes count: nothing at launch, never the same question twice, and a burst (say,
+  after your Mac wakes up) arrives as one summary.
+
 ## 5. Plan your own tasks
 
 ![Plan](media/plan.png)
@@ -185,7 +197,7 @@ Why it matters, what is unknown.
 | ⌘/ | This guide, in the app |
 
 The **menu bar** icon shows how many tickets need you and which sessions are busy, even with the
-window closed.
+window closed. Notifications reach you then too.
 
 ## 10. Privacy, data and troubleshooting
 

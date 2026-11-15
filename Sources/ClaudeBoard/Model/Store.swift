@@ -109,6 +109,12 @@ final class Store {
     var showGuide = false
     var showShareWeek = false
     var showDiscovery = false
+    /// Bumped to ask the always-alive menu bar label to open the main window (e.g. a notification click).
+    var openMainRequest = 0
+    /// nil until the user has been asked; then whether macOS allows ClaudeBoard's notifications.
+    var notificationsAllowed: Bool?
+    /// Statuses are compared from the second merge on, so launch never triggers notifications.
+    private var hasMerged = false
 
     // Status
     private(set) var isRefreshing = false
@@ -213,6 +219,9 @@ final class Store {
     // MARK: - Merge
 
     func merge(_ r: IngestResult) {
+        // Statuses as the user sees them now (their own drags included), to spot what Claude changed.
+        let before: [String: TaskStatus]? = hasMerged ? Dictionary(items.map { ($0.id, $0.status) }, uniquingKeysWith: { a, _ in a }) : nil
+        defer { hasMerged = true; Notifier.shared.process(before: before, store: self) }
         var tasks = Dictionary(uniqueKeysWithValues: ingested.tasks.map { ($0.id, $0) })
 
         // Sessions whose transcript exists are fully re-derived from it.
@@ -299,7 +308,7 @@ final class Store {
     }
 
     /// Diagnostics, only when CLAUDEBOARD_LOG points at a file.
-    static func debugLog(_ line: String) {
+    nonisolated static func debugLog(_ line: String) {
         guard let path = ProcessInfo.processInfo.environment["CLAUDEBOARD_LOG"] else { return }
         let stamp = ISO8601DateFormatter().string(from: Date())
         let data = Data("\(stamp) \(line)\n".utf8)
@@ -1001,6 +1010,24 @@ final class Store {
         guard let t = task(id), let sid = t.sessionID else { return }
         let dir = sessions[sid]?.cwd ?? t.cwd ?? Roots.primary
         Launcher.resumeClaude(sessionID: sid, in: dir)
+    }
+
+    /// Brings the main window forward on a ticket (or on Needs You), e.g. from a notification.
+    func reveal(ticket id: String?, inbox: Bool) {
+        if let id, let t = task(id) {
+            sidebar = .project(t.projectID)
+            selection = id
+            showInspector = true
+        } else if inbox {
+            sidebar = .inbox
+            mode = .board
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        if let win = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("main") == true }) {
+            win.makeKeyAndOrderFront(nil)
+        } else {
+            openMainRequest += 1
+        }
     }
 
     func revealTranscript(_ id: String) {

@@ -260,6 +260,41 @@ enum SelfTest {
             check(d.since.map { abs($0.timeIntervalSince(base.addingTimeInterval(-24 * 10 * 3600))) < 1 } == true, "discovery dates the first request")
         }
 
+        print("Notifications")
+        do {
+            let now = Date()
+            func tk(_ id: String, _ status: TaskStatus, minutesAgo: Double = 1, origin: TaskOrigin = .prompt,
+                    ask: String? = "Redis or sticky sessions?", hidden: Bool = false) -> TaskItem {
+                var t = TaskItem(id: id, origin: origin, projectID: "/p/api", sessionID: "s-\(id)", title: id, prompt: id,
+                                 createdAt: now.addingTimeInterval(-minutesAgo * 60), updatedAt: now.addingTimeInterval(-minutesAgo * 60),
+                                 inferredStatus: status)
+                t.status = status
+                t.finalReply = ask
+                t.recap = "Shipped."
+                t.hidden = hidden
+                return t
+            }
+            let both: Set<StatusChange.Kind> = [.needsYou, .done]
+            let after = [tk("a", .needsYou), tk("b", .done), tk("c", .inProgress), tk("d", .needsYou), tk("e", .needsYou, minutesAgo: 120),
+                         tk("f", .needsYou, origin: .manual), tk("g", .needsYou, hidden: true), tk("h", .needsYou, origin: .history)]
+            let before: [String: TaskStatus] = ["a": .inProgress, "b": .inProgress, "c": .todo, "d": .needsYou, "e": .inProgress, "f": .todo, "g": .todo, "h": .todo]
+            check(StatusChanges.detect(before: nil, after: after, now: now, kinds: both, alreadySent: []).isEmpty,
+                  "no notifications on the first merge after launch")
+            let ch = StatusChanges.detect(before: before, after: after, now: now, kinds: both, alreadySent: [])
+            check(ch.map(\.id) == ["a", "b"] && ch.map(\.kind) == [.needsYou, .done],
+                  "only Claude tickets that just moved to Needs You or Done (got \(ch.map(\.id)))")
+            check(StatusChanges.detect(before: before, after: after, now: now, kinds: [.needsYou], alreadySent: []).map(\.id) == ["a"],
+                  "Done notifications follow their setting")
+            check(StatusChanges.detect(before: before, after: after, now: now, kinds: both, alreadySent: Set(ch.map(\.dedupeKey))).isEmpty,
+                  "the same question or recap is never announced twice")
+            let fresh = StatusChanges.detect(before: [:], after: [tk("n", .needsYou)], now: now, kinds: both, alreadySent: [])
+            check(fresh.map(\.id) == ["n"], "a new request that ends on a question right away counts")
+            var asked = tk("q", .needsYou, ask: "Done with the audit.\n\nShould I also update the **Playwright** tests?\nI can start now.")
+            check(StatusChanges.question(of: asked) == "Should I also update the Playwright tests?", "the notification shows Claude's question")
+            asked.pendingAsk = "Pick a database"
+            check(StatusChanges.question(of: asked) == "Pick a database", "a pending ask wins over the reply text")
+        }
+
         print("Refresh picks up changes")
         let rr = tmp.appendingPathComponent("refresh-root").path
         let emptyClaude = tmp.appendingPathComponent("empty-claude").path
