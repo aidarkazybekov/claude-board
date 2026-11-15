@@ -66,6 +66,7 @@ enum Marketing {
             ("guide", AnyView(GuideSheet()), 760.0, 410.0),
             ("new-task", AnyView(NewTaskSheet()), 580.0, 660.0),
             ("settings", AnyView(SettingsView().formStyle(.grouped)), 620.0, 760.0),
+            ("menubar", AnyView(MenuBarView()), 380.0, 640.0),
         ] {
             store.newTaskProject = web
             let sheet = NSWindow(contentRect: NSRect(x: 0, y: 0, width: w, height: h), styleMask: [.borderless], backing: .buffered, defer: false)

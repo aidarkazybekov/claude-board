@@ -196,8 +196,10 @@ Why it matters, what is unknown.
 | ⇧⌘S | Share your week |
 | ⌘/ | This guide, in the app |
 
-The **menu bar** icon shows how many tickets need you and which sessions are busy, even with the
-window closed. Notifications reach you then too.
+The **menu bar** icon shows how many tickets need you, even with the window closed. Click it for
+the sessions waiting on you, each with Claude's question and **Resume** / **Open**, the sessions
+Claude is working in, and today's requests, done and Claude time (click those to open the
+Worklog). Notifications reach you then too.
 
 ## 10. Privacy, data and troubleshooting
 

@@ -57,7 +57,7 @@ enum Guide {
         GuidePage(id: 5, symbol: "menubar.arrow.up.rectangle", title: "Stay on top of it",
                   lead: "You don't have to keep the window open.",
                   points: [
-                      "The **menu bar** icon shows how many tickets need you, and which sessions are busy.",
+                      "The **menu bar** shows what's waiting on you, with Claude's question and **Resume**, plus what's running and today's numbers.",
                       "**Needs You** in the sidebar is your inbox: every place Claude is waiting.",
                       "A **notification** tells you when Claude stops to ask you something; click it to open the ticket, or Resume in Terminal.",
                       "**Settings:** project folders, backlog folders, notifications, refresh interval.",
