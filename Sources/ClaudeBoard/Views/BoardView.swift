@@ -8,8 +8,9 @@ struct BoardView: View {
         let grouped = Dictionary(grouping: tasks, by: \.status)
         GeometryReader { geo in
             // Columns share the width; below 230pt each the board scrolls sideways.
+            // Each column is `width` plus its 6pt padding on both sides.
             let n = CGFloat(TaskStatus.allCases.count)
-            let width = max(230, min(340, (geo.size.width - 46 - 14 * (n - 1)) / n))
+            let width = max(230, min(340, (geo.size.width - 46 - 14 * (n - 1) - 12 * n) / n))
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: 14) {
                     ForEach(TaskStatus.allCases) { status in

@@ -18,10 +18,6 @@ enum Snapshot {
         guard let dir = directory, !started else { return }
         started = true
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
-        if Demo.isOn {
-            Task { @MainActor in await Marketing.run(store: store, dir: dir) }
-            return
-        }
         Task { @MainActor in
             // Wait for the first ingest.
             for _ in 0..<120 where store.lastRefresh == nil { try? await Task.sleep(for: .milliseconds(250)) }

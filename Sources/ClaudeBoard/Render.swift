@@ -9,6 +9,11 @@ enum Render {
     static let size = CGSize(width: 1600, height: 1000)
 
     static func run(dir: String) {
+        harness(dir: dir) { store in await scenes(store: store, dir: dir) }
+    }
+
+    /// Starts the demo store without a Dock icon or a visible window, runs `body`, then quits.
+    static func harness(dir: String, _ body: @escaping @MainActor (Store) async -> Void) {
         let app = NSApplication.shared
         app.setActivationPolicy(.accessory)
         try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
@@ -16,7 +21,9 @@ enum Render {
         store.showOnboarding = false
         store.start()
         Task { @MainActor in
-            await scenes(store: store, dir: dir)
+            for _ in 0..<160 where store.lastRefresh == nil { try? await Task.sleep(for: .milliseconds(250)) }
+            try? await Task.sleep(for: .milliseconds(800))
+            await body(store)
             exit(0)
         }
         app.run()
@@ -30,7 +37,7 @@ enum Render {
         return w
     }
 
-    private static func shoot<V: View>(_ view: V, store: Store, size: CGSize, dark: Bool = false, wait: Int = 1300, _ path: String) async {
+    static func shoot<V: View>(_ view: V, store: Store, size: CGSize, dark: Bool = false, wait: Int = 1300, _ path: String) async {
         let w = window(size, dark: dark)
         w.contentView = NSHostingView(rootView: view.environment(store).frame(width: size.width, height: size.height))
         w.orderFrontRegardless()
@@ -41,8 +48,6 @@ enum Render {
     }
 
     static func scenes(store: Store, dir: String) async {
-        for _ in 0..<160 where store.lastRefresh == nil { try? await Task.sleep(for: .milliseconds(250)) }
-        try? await Task.sleep(for: .milliseconds(800))
         store.period = .month
 
         let needs = store.items.first { $0.status == .needsYou && !$0.hidden }?.id
@@ -95,12 +100,18 @@ enum Render {
 }
 
 /// The app window's layout without the system chrome: sidebar, main area, details.
+/// `chrome` adds the window buttons above the sidebar, for screenshots that should read as a Mac window.
 struct RenderWindow: View {
     @Environment(Store.self) private var store
+    var chrome = false
 
     var body: some View {
         HStack(spacing: 0) {
-            SidebarView().frame(width: 252)
+            SidebarView()
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if chrome { TrafficLights().frame(maxWidth: .infinity, minHeight: 40, alignment: .leading).padding(.leading, 18) }
+                }
+                .frame(width: 252)
             MainArea()
             if store.showInspector {
                 SelectedDetail()
@@ -109,5 +120,19 @@ struct RenderWindow: View {
             }
         }
         .background(Studio.ground)
+    }
+}
+
+/// The close, minimise and zoom buttons of a Mac window.
+struct TrafficLights: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach([UInt32(0xFF5F57), 0xFEBC2E, 0x28C840], id: \.self) { hex in
+                Circle()
+                    .fill(Color(hex: hex))
+                    .overlay(Circle().strokeBorder(.black.opacity(0.12), lineWidth: 0.5))
+                    .frame(width: 12, height: 12)
+            }
+        }
     }
 }

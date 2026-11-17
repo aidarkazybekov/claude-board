@@ -2,12 +2,13 @@ import AppKit
 import SwiftUI
 import WebKit
 
-/// `ClaudeBoard --demo --snapshot <dir>` renders curated scenes of the demo board for the README,
-/// release notes and social posts. Real-window glass panels don't draw through `cacheDisplay`,
-/// so scenes are composed in a plain window that mirrors the app's layout and toolbar.
+/// `ClaudeBoard --media <dir>` renders the demo board's shots for the README, the site and the tour
+/// to PNGs and quits. Like `--render`, every window is drawn off screen and the app never takes focus;
+/// `scripts/make-media.swift` turns the PNGs into the published images and videos.
 @MainActor
 enum Marketing {
-    static let size = CGSize(width: 1600, height: 1000)
+    /// Wide enough for all five columns and the details panel, so a waiting ticket and its question show together.
+    static let wide = CGSize(width: 2280, height: 1060)
 
     struct Scene {
         let name: String
@@ -15,86 +16,80 @@ enum Marketing {
         let scope: SidebarItem
         let select: (Store) -> String?
         var inspector = true
-        var dark = true
+        var dark = false
+        var size = CGSize(width: 1600, height: 1000)
+        var period: Period = .month
+        var source: SourceFilter = .all
+    }
+    /// The hero: wide enough for all five columns.
+    static let hero = CGSize(width: 1760, height: 1100)
+
+    static func run(dir: String) {
+        Render.harness(dir: dir) { store in await scenes(store: store, dir: dir) }
     }
 
-    static func run(store: Store, dir: String) async {
-        for _ in 0..<160 where store.lastRefresh == nil { try? await Task.sleep(for: .milliseconds(250)) }
-        try? await Task.sleep(for: .milliseconds(800))
-        store.period = .week
-
+    static func scenes(store: Store, dir: String) async {
+        store.period = .month
         let acme = Demo.base.path + "/Projects/acme"
         let web = acme + "/apps/web"
-        func ticket(_ cwd: String, _ status: TaskStatus) -> String? {
-            store.items.first { $0.cwd == cwd && $0.status == status && !$0.origin.isPlanned }?.id
+        func agentTicket(_ cwd: String, _ status: TaskStatus, _ agent: Agent? = nil) -> String? {
+            store.items.first { $0.cwd == cwd && $0.status == status && !$0.origin.isPlanned && !$0.hidden
+                && (agent == nil || $0.agentKind == agent) }?.id
         }
         func file(_ key: String) -> String? { store.items.first { $0.externalID == key }?.id }
 
         let scenes = [
-            Scene(name: "board", mode: .board, scope: .all, select: { _ in nil }, inspector: false),
+            Scene(name: "board", mode: .board, scope: .all, select: { _ in nil }, inspector: false, size: hero),
+            Scene(name: "board-dark", mode: .board, scope: .all, select: { _ in nil }, inspector: false, dark: true, size: hero),
+            Scene(name: "needs-you", mode: .board, scope: .all, select: { _ in agentTicket(acme + "/apps/api", .needsYou, .codex) ?? agentTicket(acme + "/apps/api", .needsYou) },
+                  size: wide),
             Scene(name: "plan", mode: .plan, scope: .all, select: { _ in file("T-004") }),
-            Scene(name: "needs-you", mode: .board, scope: .all, select: { _ in ticket(acme + "/apps/api", .needsYou) }),
-            Scene(name: "project", mode: .board, scope: .project(web), select: { _ in ticket(web, .inProgress) }),
-            Scene(name: "worklog", mode: .worklog, scope: .all, select: { s in s.items.first { $0.title.hasPrefix("Add a /random") }?.id }),
+            Scene(name: "plan-dark", mode: .plan, scope: .all, select: { _ in file("T-004") }, dark: true),
+            Scene(name: "project", mode: .board, scope: .project(web), select: { _ in agentTicket(web, .inProgress) }),
+            Scene(name: "agent", mode: .board, scope: .agent(.codex), select: { _ in nil }, inspector: false),
+            // Agent work only, so the first day shown is one full of requests whatever the time of day.
+            Scene(name: "worklog", mode: .worklog, scope: .all, select: { s in s.items.first { $0.title.hasPrefix("Add a /random") }?.id },
+                  source: .claude),
             Scene(name: "list", mode: .list, scope: .all, select: { _ in nil }, inspector: false),
-            Scene(name: "insights", mode: .insights, scope: .all, select: { _ in nil }, inspector: false),
-            Scene(name: "plan-light", mode: .plan, scope: .all, select: { _ in file("T-004") }, dark: false),
-            Scene(name: "board-light", mode: .board, scope: .all, select: { _ in nil }, inspector: false, dark: false),
+            Scene(name: "insights", mode: .insights, scope: .all, select: { _ in nil }, inspector: false, period: .week),
+            Scene(name: "insights-dark", mode: .insights, scope: .all, select: { _ in nil }, inspector: false, dark: true, period: .week),
         ]
-
-        let win = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
-        win.contentView = NSHostingView(rootView: MarketingWindow().environment(store))
-        if let screen = NSScreen.main {
-            win.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX, y: screen.visibleFrame.maxY - size.height))
-        }
-        win.orderFrontRegardless()
-
         for scene in scenes {
-            win.appearance = NSAppearance(named: scene.dark ? .darkAqua : .aqua)
+            store.period = scene.period
+            store.source = scene.source
             store.mode = scene.mode
             store.sidebar = scene.scope
             store.showInspector = scene.inspector
             store.selection = scene.select(store)
-            try? await Task.sleep(for: .milliseconds(scene.mode == .insights ? 4000 : 1600))
-            await capture(win, "\(dir)/\(scene.name).png")
+            await Render.shoot(RenderWindow(chrome: true), store: store, size: scene.size, dark: scene.dark,
+                               wait: scene.mode == .insights ? 3800 : 1500, "\(dir)/\(scene.name).png")
         }
-        win.orderOut(nil)
+        store.sidebar = .all
+        store.mode = .board
+        store.period = .month
+        store.source = .all
 
-        // Sheets: first-run discovery, guide and new task.
+        // Sheets and panels, each in its own window.
+        store.newTaskProject = web
         for (name, view, w, h) in [
-            ("discovery", AnyView(DiscoverySheet()), 640.0, 560.0),
-            ("guide", AnyView(GuideSheet()), 760.0, 410.0),
-            ("new-task", AnyView(NewTaskSheet()), 580.0, 660.0),
-            ("settings", AnyView(SettingsView().formStyle(.grouped)), 620.0, 760.0),
-            ("menubar", AnyView(MenuBarView()), 380.0, 640.0),
+            ("discovery", AnyView(DiscoverySheet()), 1060.0, 600.0),
+            ("guide", AnyView(GuideSheet()), 900.0, 520.0),
+            ("new-task", AnyView(NewTaskSheet()), 640.0, 740.0),
+            ("settings", AnyView(SettingsView()), 900.0, 1100.0),
+            ("menubar", AnyView(MenuBarView()), 390.0, 660.0),
+            ("share-sheet", AnyView(ShareWeekSheet()), 1000.0, 640.0),
         ] {
-            store.newTaskProject = web
-            let sheet = NSWindow(contentRect: NSRect(x: 0, y: 0, width: w, height: h), styleMask: [.borderless], backing: .buffered, defer: false)
-            sheet.appearance = NSAppearance(named: .darkAqua)
-            sheet.contentView = NSHostingView(rootView: view.environment(store).frame(width: w, height: h)
-                .background(Color(nsColor: .windowBackgroundColor)))
-            sheet.orderFrontRegardless()
-            try? await Task.sleep(for: .milliseconds(name == "discovery" ? 2200 : 1200))
-            await capture(sheet, "\(dir)/\(name).png")
-            sheet.orderOut(nil)
+            await Render.shoot(view.background(Studio.surface), store: store, size: CGSize(width: w, height: h),
+                               wait: name == "discovery" ? 2600 : 1300, "\(dir)/\(name).png")
         }
-        // Share-your-week card, private and with project names, plus the share sheet.
+        // The share-your-week card on its own, private and with project names.
         let (ws, we) = SharePeriod.week.range()
-        let summary = WeekSummary.compute(items: store.items.filter { !$0.hidden }, project: store.project, start: ws, end: we)
+        let summary = WeekSummary.compute(items: store.visibleItems, project: store.project, start: ws, end: we)
         for (name, names) in [("week-card", false), ("week-card-projects", true)] {
             if let png = CardRenderer.png(WeekCard(summary: summary, heading: SharePeriod.week.heading, showProjects: names)) {
                 try? png.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
             }
         }
-        let share = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: 520), styleMask: [.borderless], backing: .buffered, defer: false)
-        share.appearance = NSAppearance(named: .darkAqua)
-        share.contentView = NSHostingView(rootView: ShareWeekSheet().environment(store).frame(width: 680, height: 520)
-            .background(Color(nsColor: .windowBackgroundColor)))
-        share.orderFrontRegardless()
-        try? await Task.sleep(for: .milliseconds(1200))
-        await capture(share, "\(dir)/share-sheet.png")
-        share.orderOut(nil)
-        NSApp.terminate(nil)
     }
 
     /// Renders the window, then paints any web view (charts) on top from its own snapshot.
@@ -141,15 +136,5 @@ enum Marketing {
         if let w = v as? WKWebView { return w }
         for s in v.subviews { if let w = findWeb(s) { return w } }
         return nil
-    }
-}
-
-/// The app's layout without glass: sidebar, main area (with its own header), details.
-struct MarketingWindow: View {
-    @Environment(Store.self) private var store
-
-    var body: some View {
-        RenderWindow()
-            .frame(width: Marketing.size.width, height: Marketing.size.height)
     }
 }

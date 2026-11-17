@@ -21,7 +21,7 @@ waiting on you, then hand the next task to whichever agent you like.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/site/hero-dark.jpg">
-  <img src="docs/site/hero-light.jpg" width="920" alt="ClaudeBoard: Claude Code sessions and planned tasks on one board, with a ticket's plan and outcome open on the right">
+  <img src="docs/site/hero-light.jpg" width="920" alt="ClaudeBoard: requests to Claude Code and Codex next to your own planned tasks, in Backlog, To do, In progress, Needs you and Done">
 </picture>
 
 <sub>Free and open source · Reads your agents' local history, never changes it · No account, no server, no analytics</sub>
@@ -84,7 +84,7 @@ On first launch, pick the folders that hold your projects (it suggests `~/Develo
 outcome so far and a **Resume** button. The menu bar shows the count even with the window closed.
 
 </td>
-<td><img src="docs/site/needs-you.jpg" width="560" alt="Needs You: a session waiting on an answer, with Claude's question and a Resume button"></td>
+<td><img src="docs/site/needs-you.jpg" width="560" alt="Needs you: a Codex session waiting on an answer, with its question and a Resume button"></td>
 </tr>
 <tr>
 <td><img src="docs/site/plan.jpg" width="560" alt="Plan view: each project with its open tasks and an add-a-task line"></td>
@@ -119,7 +119,7 @@ for stand-ups and timesheets. **Insights** charts when and where you work with C
 - **In the app:** **Help → Try the Demo Board** opens a fictional company with Claude sessions in
   every state and a shared backlog. Nothing touches your real data.
 
-<p align="center"><img src="docs/media/tour.gif" width="820" alt="A short tour: Plan, Board, a ticket waiting on you, Worklog and Insights"></p>
+<p align="center"><img src="docs/media/tour.gif" width="820" alt="A short tour: Board, a ticket waiting on you, Plan, an agent at work, Worklog and Insights"></p>
 
 The **[guide](docs/GUIDE.md)** walks through every feature with screenshots. It's also in the app
 under **Help → ClaudeBoard Guide** (⌘/).
@@ -226,12 +226,13 @@ CLAUDEBOARD_DATA_DIR=$(mktemp -d) .build/debug/ClaudeBoard --selftest     # pars
 .build/debug/ClaudeBoard --demo                                           # run on sample data
 ```
 
-README screenshots, the GIF and the tour videos are generated from the demo board:
+README and site screenshots, the GIF and the tour videos are generated from the demo board,
+off screen (the app never shows a window or takes focus):
 
 ```bash
 scripts/build-app.sh --no-install
-build/ClaudeBoard.app/Contents/MacOS/ClaudeBoard --demo --snapshot "$PWD/build/raw"
-swift scripts/make-media.swift build/raw docs/media build/media
+build/ClaudeBoard.app/Contents/MacOS/ClaudeBoard --media "$PWD/build/raw"
+swift scripts/make-media.swift build/raw docs build/media
 ```
 
 ```
@@ -241,7 +242,7 @@ Sources/ClaudeBoard/
   Model/    Models, Store (merge, links, edits, persistence), Paths (roots, discovery), Launcher
   Views/    Plan, Board, List, Worklog, Insights, TaskDetail, NewTask, Settings, MenuBar
 scripts/    build-app.sh, make-icon.swift, make-media.swift (screenshots, GIF, videos)
-docs/       GUIDE.md, media/
+docs/       GUIDE.md, media/, the site (index.html, ru/, site/)
 Resources/  plotly-cartesian.min.js
 ```
 

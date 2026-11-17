@@ -49,9 +49,12 @@ CLAUDEBOARD_LOG=/tmp/claudeboard.log CLAUDEBOARD_NOTIFY_DRYRUN=1 build/ClaudeBoa
 # icon (safe to run while you work). Good for checking a UI change.
 .build/debug/ClaudeBoard --render /tmp/cb-render
 
-# Run on the sample "Acme" demo board (never reads your real data). Add --snapshot <dir> for
-# the curated README scenes, then `swift scripts/make-media.swift <dir> docs/media build/media`.
+# Run on the sample "Acme" demo board (never reads your real data).
 .build/debug/ClaudeBoard --demo
+
+# README and site media, also off screen: run from the app bundle so the share card gets the icon.
+build/ClaudeBoard.app/Contents/MacOS/ClaudeBoard --media "$PWD/build/raw"
+swift scripts/make-media.swift build/raw docs build/media
 ```
 
 The code layout is in the [README](README.md#development).
