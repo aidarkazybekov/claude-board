@@ -11,36 +11,42 @@ struct PlanView: View {
         let planned = store.scoped.filter { $0.origin.isPlanned }
         let byProject = Dictionary(grouping: planned, by: \.projectID)
         let ids = projectIDs(byProject)
+        let openCount = planned.filter { $0.status.isOpen }.count
+        let withAgent = planned.filter { $0.status.isOpen && store.claudeActivity($0).live }.count
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text("Tasks you planned, per project. Claude's work on a task shows on its row once a session mentions its key.")
-                        .font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 14) {
+                    Text(withAgent > 0 ? "\(openCount) planned tasks. \(withAgent) with an agent right now." : "\(openCount) planned task\(openCount == 1 ? "" : "s"). Start one with any agent.")
+                        .font(Studio.text(13.5, .semibold)).foregroundStyle(Studio.ink2)
                     Spacer()
                     Toggle("Show done", isOn: $showDone).toggleStyle(.checkbox)
                     if store.scopeProjectID == nil {
                         Toggle("Show projects without tasks", isOn: $showEmpty).toggleStyle(.checkbox)
                     }
                 }
-                .font(.caption)
+                .font(Studio.text(12.5, .semibold))
+                .foregroundStyle(Studio.ink2)
                 if ids.isEmpty {
-                    ContentUnavailableView {
-                        Label("No planned tasks yet", systemImage: "checklist")
-                    } description: {
-                        Text("Add tasks for each app here. They stay on this Mac, or go in a project's backlog/ folder so your team and Claude can read them too.")
-                    } actions: {
-                        Button("New Task…") { store.newTaskProject = store.scopeProjectID; store.showNewTask = true }
+                    VStack(spacing: 10) {
+                        Text("No planned tasks yet").font(Studio.display(22)).foregroundStyle(Studio.ink)
+                        Text("Add tasks for each project here. They stay on this Mac, or go in the project's backlog/ folder so your team and your agents can read them too.")
+                            .font(Studio.text(13.5, .medium)).foregroundStyle(Studio.ink2).multilineTextAlignment(.center).frame(maxWidth: 460)
+                        Button("New task") { store.newTaskProject = store.scopeProjectID; store.showNewTask = true }
+                            .buttonStyle(.studio(.primary))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 40)
+                    .padding(.vertical, 50)
+                    .studioCard(radius: Studio.radiusPanel, padding: 20)
                 }
-                ForEach(ids, id: \.self) { pid in
-                    ProjectPlanSection(projectID: pid, tasks: byProject[pid] ?? [], showDone: showDone)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 520), spacing: 16, alignment: .top)], alignment: .leading, spacing: 16) {
+                    ForEach(ids, id: \.self) { pid in
+                        ProjectPlanSection(projectID: pid, tasks: byProject[pid] ?? [], showDone: showDone)
+                    }
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 26)
+            .padding(.bottom, 26)
         }
-        .background(Color(nsColor: .underPageBackgroundColor))
     }
 
     private func projectIDs(_ byProject: [String: [TaskItem]]) -> [String] {
@@ -76,68 +82,70 @@ struct ProjectPlanSection: View {
         let done = tasks.filter { !$0.status.isOpen }.sorted { ($0.doneAt ?? $0.updatedAt) > ($1.doneAt ?? $1.updatedAt) }
         let folder = store.folders(for: projectID).first
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 3).fill(Palette.project(info.colorIndex)).frame(width: 11, height: 11)
-                Button {
-                    store.sidebar = .project(projectID)
-                } label: {
-                    Text(info.name).font(.headline)
+            HStack(spacing: 10) {
+                ProjectDot(colorIndex: info.colorIndex, size: 14)
+                Button { store.sidebar = .project(projectID) } label: {
+                    Text(info.name).font(Studio.display(19)).foregroundStyle(Studio.ink)
                 }
                 .buttonStyle(.plain)
-                if info.workspace != info.name && info.workspace != "Other" {
-                    Text(info.workspace).font(.caption).foregroundStyle(.secondary)
-                }
-                Text("\(open.count) open").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                Spacer()
-                if let folder {
-                    Label(Paths.tilde(folder), systemImage: "folder")
-                        .font(.caption2).foregroundStyle(.tertiary).lineLimit(1).truncationMode(.head)
-                        .help("Tasks are saved as files in this backlog folder")
-                } else {
-                    Label("This Mac", systemImage: "laptopcomputer")
-                        .font(.caption2).foregroundStyle(.tertiary)
-                        .help("Tasks are saved in ClaudeBoard on this Mac only")
-                }
+                .help("Show only \(info.name)")
+                Text("\(open.count) open").font(Studio.text(13, .bold)).foregroundStyle(Palette.ink(info.colorIndex))
+                Text(folder.map { "Saved in \(($0 as NSString).lastPathComponent)/" } ?? "Saved on this Mac")
+                    .font(Studio.text(12, .semibold)).foregroundStyle(Studio.ink2)
+                    .padding(.horizontal, 10).padding(.vertical, 2)
+                    .background(Capsule().fill(Studio.surface.opacity(0.75)))
+                    .help(folder.map { "Tasks are saved as files in \(Paths.tilde($0))" } ?? "Tasks are saved in the app on this Mac only")
+                Spacer(minLength: 6)
+                Button("Copy for an agent") { store.copyPlanForClaude(projectID) }
+                    .buttonStyle(.studio(.white, size: 12))
+                    .help("Copies the open tasks as a Markdown list to paste into any agent")
                 Menu {
                     Button("New Task…") { store.newTaskProject = projectID; store.showNewTask = true }
-                    Button("Copy Open Tasks for Claude") { store.copyPlanForClaude(projectID) }
+                    Button("Copy Open Tasks for an Agent") { store.copyPlanForClaude(projectID) }
                     if folder == nil && projectID.hasPrefix("/") {
                         Divider()
                         Button("Keep Tasks in the Repo (create backlog/)") { store.createBacklogFolder(for: projectID) }
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis").font(.system(size: 12, weight: .heavy)).frame(width: 28, height: 28)
+                        .background(Circle().fill(Studio.surface))
                 }
-                .menuStyle(.borderlessButton)
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
                 .fixedSize()
+                .accessibilityLabel("More for \(info.name)")
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 13)
+            .background(Palette.tint(info.colorIndex))
 
-            Divider()
-
-            VStack(spacing: 0) {
+            VStack(spacing: 2) {
                 ForEach(open) { t in PlanRow(task: t) }
                 if showDone {
                     ForEach(done) { t in PlanRow(task: t) }
                 }
-                HStack(spacing: 8) {
-                    Image(systemName: "plus").foregroundStyle(.secondary).frame(width: 16)
-                    TextField("Add a task for \(info.name)…", text: $draft)
-                        .textFieldStyle(.plain)
-                        .focused($focused)
-                        .onSubmit(add)
-                    if !draft.isEmpty {
-                        Text("⏎").font(.caption).foregroundStyle(.tertiary)
-                    }
-                }
-                .font(.callout)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+
+            HStack(spacing: 8) {
+                Image(systemName: "plus").font(.system(size: 11, weight: .heavy)).foregroundStyle(Studio.muted)
+                TextField("Add a task for \(info.name)…  !high sets priority", text: $draft)
+                    .textFieldStyle(.plain)
+                    .font(Studio.text(13, .medium))
+                    .focused($focused)
+                    .onSubmit(add)
+                if !draft.isEmpty { Text("⏎").font(Studio.text(12, .bold)).foregroundStyle(Studio.faint) }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Capsule().fill(Studio.well))
+            .padding(.horizontal, 14)
+            .padding(.bottom, 14)
         }
-        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.07)))
+        .background(Studio.surface)
+        .clipShape(RoundedRectangle(cornerRadius: Studio.radiusPanel, style: .continuous))
     }
 
     private func order(_ a: TaskItem, _ b: TaskItem) -> Bool {
@@ -183,60 +191,47 @@ struct PlanRow: View {
     var body: some View {
         let selected = store.selection == task.id
         let activity = store.claudeActivity(task)
+        let agent = store.agents(on: task).first
         HStack(spacing: 10) {
             Button {
                 store.setStatus(task.id, task.status == .done ? .todo : .done)
             } label: {
-                Image(systemName: task.status == .done ? "checkmark.circle.fill" : task.status.symbol)
-                    .foregroundStyle(Palette.status(task.status))
-                    .frame(width: 16)
+                StatusRing(status: task.status)
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .help(task.status == .done ? "Reopen" : "Mark done")
+            .accessibilityLabel(task.status == .done ? "Reopen \(task.title)" : "Mark \(task.title) done")
 
-            KeyLabel(text: store.key(for: task)).frame(minWidth: 52, alignment: .leading)
-            PriorityIcon(priority: task.priority)
+            Text(store.key(for: task)).font(Studio.text(12, .bold).monospacedDigit()).foregroundStyle(Studio.muted)
+                .frame(minWidth: 54, alignment: .leading)
             Text(task.title)
+                .font(Studio.text(13.5, .bold))
                 .lineLimit(1)
-                .strikethrough(task.status == .done, color: .secondary)
-                .foregroundStyle(task.status == .done ? .secondary : .primary)
-            if let area = task.area, !area.isEmpty {
-                Text(area).font(.caption2).foregroundStyle(.secondary)
-                    .padding(.horizontal, 5).padding(.vertical, 1)
-                    .background(.quaternary, in: Capsule())
+                .strikethrough(task.status == .done, color: Studio.faint)
+                .foregroundStyle(task.status == .done ? Studio.muted : Studio.ink)
+            if task.priority >= .medium {
+                Text(task.priority.title).font(Studio.text(12, .bold)).foregroundStyle(Palette.priority(task.priority))
             }
+            if let area = task.area, !area.isEmpty { Tag(text: area, color: Studio.ink2, fill: Studio.well) }
             Spacer(minLength: 8)
-            if activity.count > 0 {
-                HStack(spacing: 4) {
-                    if activity.live { LiveDot(busy: activity.busy) }
-                    Image(systemName: "sparkle")
-                    Text("\(activity.count)")
-                }
-                .font(.caption2)
-                .foregroundStyle(activity.needsYou ? Palette.status(.needsYou) : .secondary)
-                .help(activity.needsYou ? "Claude is waiting on you in a session for this task" : "\(activity.count) Claude request(s) worked on this")
+            if activity.count > 0, let agent {
+                AgentChip(agent: agent, text: activity.needsYou ? "\(agent.title) needs you" : activity.busy ? "\(agent.title) working" : "\(activity.count) request\(activity.count == 1 ? "" : "s")",
+                          coral: activity.needsYou)
+                    .overlay(alignment: .topTrailing) { if activity.live { LiveDot(busy: activity.busy).offset(x: 3, y: -3) } }
             }
             let p = task.subtaskProgress
             if p.total > 0 {
-                Text("\(p.done)/\(p.total)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-            }
-            if task.status != .done && task.status != .todo {
-                Text(task.status.title).font(.caption2).foregroundStyle(Palette.status(task.status))
+                Text("\(p.done)/\(p.total)").font(Studio.text(12, .bold).monospacedDigit()).foregroundStyle(Studio.muted)
             }
             if hovering && task.status.isOpen {
-                Button {
-                    store.startWithClaude(task.id)
-                } label: {
-                    Image(systemName: "play.circle")
-                }
-                .buttonStyle(.borderless)
-                .help("Start with Claude in Terminal")
+                StartWithMenu(taskID: task.id, size: 11.5)
             }
         }
-        .font(.callout)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(selected ? Color.accentColor.opacity(0.14) : hovering ? Color.primary.opacity(0.04) : .clear)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(selected ? Studio.well : hovering ? Studio.well.opacity(0.6) : .clear))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(selected ? Studio.ink : .clear, lineWidth: 1.5))
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
         .onTapGesture {
@@ -245,5 +240,32 @@ struct PlanRow: View {
         }
         .draggable(task.id)
         .contextMenu { TaskContextMenu(task: task) }
+    }
+}
+
+/// Round status marker: open ring, half-filled while in progress, coral when it needs you, filled when done.
+struct StatusRing: View {
+    let status: TaskStatus
+    var size: CGFloat = 20
+
+    var body: some View {
+        ZStack {
+            switch status {
+            case .done:
+                Circle().fill(Palette.status(.done))
+                Image(systemName: "checkmark").font(.system(size: size * 0.5, weight: .heavy)).foregroundStyle(.white)
+            case .needsYou:
+                Circle().fill(Studio.coral)
+                Text("!").font(.system(size: size * 0.6, weight: .heavy, design: .rounded)).foregroundStyle(.white)
+            case .inProgress:
+                Circle().strokeBorder(Studio.blue, lineWidth: 2)
+                Circle().trim(from: 0, to: 0.5).fill(Studio.blue).rotationEffect(.degrees(-90)).padding(4)
+            case .todo:
+                Circle().strokeBorder(Studio.ink2, lineWidth: 2)
+            case .backlog:
+                Circle().strokeBorder(Palette.status(.backlog), style: StrokeStyle(lineWidth: 2, dash: [3, 2.5]))
+            }
+        }
+        .frame(width: size, height: size)
     }
 }

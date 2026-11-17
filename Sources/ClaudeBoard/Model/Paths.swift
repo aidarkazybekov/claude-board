@@ -12,6 +12,24 @@ enum Paths {
         ProcessInfo.processInfo.environment["CLAUDEBOARD_DESKTOP_DIR"] ?? home + "/Library/Application Support/Claude/claude-code-sessions"
     }
 
+    // Other agents' data, overridable like Claude Code's.
+    private static func env(_ k: String) -> String? { ProcessInfo.processInfo.environment[k] }
+    static var codexDir: String { env("CLAUDEBOARD_CODEX_DIR") ?? home + "/.codex" }
+    static var cursorDir: String { env("CLAUDEBOARD_CURSOR_DIR") ?? home + "/Library/Application Support/Cursor" }
+    static var geminiDir: String { env("CLAUDEBOARD_GEMINI_DIR") ?? home + "/.gemini" }
+    static var antigravityDir: String { env("CLAUDEBOARD_ANTIGRAVITY_DIR") ?? home + "/Library/Application Support/Antigravity" }
+
+    /// Where an agent keeps its history on this Mac.
+    static func data(for agent: Agent) -> String {
+        switch agent {
+        case .claudeCode: return claudeDir
+        case .codex: return codexDir
+        case .cursor: return cursorDir
+        case .gemini: return geminiDir
+        case .antigravity: return antigravityDir
+        }
+    }
+
     static var appSupport: URL {
         if let override = ProcessInfo.processInfo.environment["CLAUDEBOARD_DATA_DIR"] {
             let url = URL(fileURLWithPath: override, isDirectory: true)
@@ -116,11 +134,18 @@ enum ProjectResolver {
         guard var cwd = rawCwd, !cwd.isEmpty else { return otherID }
         cwd = (cwd as NSString).standardizingPath
 
-        // Worktrees belong to their parent repo.
-        for marker in ["/.claude/worktrees/", "/.worktrees/", "/.claude-worktrees/"] {
-            if let r = cwd.range(of: marker) { cwd = String(cwd[..<r.lowerBound]) }
+        // Worktrees belong to their parent repo: any hidden folder with "worktree" in its name
+        // (.claude/worktrees, .worktrees, .conductor-worktrees, …) and agent workspaces.
+        let parts = cwd.split(separator: "/", omittingEmptySubsequences: false)
+        var cut: Int?
+        for k in parts.indices.dropFirst(2) {
+            if parts[k].hasPrefix(".") && parts[k].lowercased().contains("worktree") { cut = k; break }        // /repo/.worktrees/x
+            if parts[k - 1].hasPrefix(".") && parts[k].lowercased().contains("worktree") { cut = k - 1; break } // /repo/.claude/worktrees/x
         }
+        if let cut { cwd = parts[..<cut].joined(separator: "/") }
         if cwd.contains("/Application Support/Claude/scratch-workspaces") { return scratchID }
+        // Codex app chats without a project run in ~/Documents/Codex/<date>/<chat>.
+        if let r = cwd.range(of: "/Documents/Codex/"), cwd[r.upperBound...].prefix(4).allSatisfy(\.isNumber) { return scratchID }
 
         // Inside a known repo: that repo is the project.
         if let repo = ProjectRegistry.shared.repo(containing: cwd) { return repo }

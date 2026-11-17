@@ -47,7 +47,7 @@ enum Snapshot {
 
             // Glass panels (sidebar, inspector) don't draw through cacheDisplay, so also render a flat
             // composition of the same views in an offscreen window.
-            if let pick {
+            if pick != nil {
                 let flat = HStack(spacing: 0) {
                     SidebarView().frame(width: 270)
                     Divider()

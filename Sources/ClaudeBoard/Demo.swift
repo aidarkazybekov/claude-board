@@ -19,6 +19,11 @@ enum Demo {
         setenv("CLAUDEBOARD_CLAUDE_DIR", b + "/claude", 1)
         setenv("CLAUDEBOARD_DESKTOP_DIR", b + "/desktop", 1)
         setenv("CLAUDEBOARD_ROOTS", b + "/Projects", 1)
+        // Other agents read demo folders too, so the demo never shows real data.
+        setenv("CLAUDEBOARD_CODEX_DIR", b + "/codex", 1)
+        setenv("CLAUDEBOARD_CURSOR_DIR", b + "/cursor", 1)
+        setenv("CLAUDEBOARD_GEMINI_DIR", b + "/gemini", 1)
+        setenv("CLAUDEBOARD_ANTIGRAVITY_DIR", b + "/antigravity", 1)
         DemoData(base: b).write()
     }
 
@@ -62,6 +67,63 @@ struct DemoData {
         }
         writeBacklog()
         writeSessions()
+        writeCodex()
+    }
+
+    // MARK: Codex sessions (JSONL rollouts, as the Codex CLI writes them)
+
+    private func writeCodex() {
+        let fm = FileManager.default
+        let api = acme + "/apps/api", web = acme + "/apps/web", mobile = acme + "/apps/mobile"
+        let day = DateFormatter()
+        day.dateFormat = "yyyy/MM/dd"
+        func rollout(_ id: String, cwd: String, start: Date, _ events: [(Date, [String: Any])], open: Bool) {
+            let dir = base + "/codex/sessions/" + day.string(from: start)
+            try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            var lines = [json(["timestamp": iso.string(from: start), "type": "session_meta",
+                               "payload": ["id": id, "cwd": cwd, "timestamp": iso.string(from: start), "originator": "codex_cli_rs"]])]
+            for (at, payload) in events { lines.append(json(["timestamp": iso.string(from: at), "type": "event_msg", "payload": payload])) }
+            let path = dir + "/rollout-\(id).jsonl"
+            try? (lines.joined(separator: "\n") + "\n").write(toFile: path, atomically: true, encoding: .utf8)
+            let mtime = open ? now : (events.last?.0 ?? start)
+            try? fm.setAttributes([.modificationDate: mtime], ofItemAtPath: path)
+        }
+        func cmd(_ at: Date) -> (Date, [String: Any]) { (at, ["type": "exec_command_end", "exit_code": 0]) }
+        func patch(_ at: Date, _ files: [String], in dir: String) -> (Date, [String: Any]) {
+            (at, ["type": "patch_apply_end", "success": true, "changes": Dictionary(uniqueKeysWithValues: files.map { (dir + "/" + $0, ["type": "update"]) })])
+        }
+
+        // Busy right now: tests for the limiter.
+        rollout("019a6b2e-api3-4c1d-9f00-codexdemo001", cwd: api, start: ago(9), [
+            (ago(9), ["type": "user_message", "message": "Add 429 tests for the rate limiter: per-key limits, Retry-After header, and the reset after a minute."]),
+            cmd(ago(8)), patch(ago(7), ["internal/ratelimit/bucket_test.go"], in: api), cmd(ago(6)), cmd(ago(3)),
+            (ago(2), ["type": "agent_message", "message": "Running the limiter tests: 31 of 58 pass so far."]),
+        ], open: true)
+
+        // Waiting on you: a question about the shared store.
+        rollout("019a6b2e-api6-4c1d-9f00-codexdemo002", cwd: api, start: ago(40), [
+            (ago(40), ["type": "user_message", "message": "Look at T-006 and make the limiter work across all API pods."]),
+            cmd(ago(38)), patch(ago(33), ["internal/ratelimit/shared_test.go"], in: api), cmd(ago(30)),
+            (ago(23), ["type": "agent_message", "message": "Each pod keeps its own counter, so a client can make twice the allowed requests. I wrote a failing test for it."]),
+            (ago(23), ["type": "request_user_input", "question": "Use Redis for the limiter, or sticky sessions on the load balancer?"]),
+        ], open: true)
+
+        // Done this morning: the flaky checkout test.
+        rollout("019a6b2e-web1-4c1d-9f00-codexdemo003", cwd: web, start: ago(260), [
+            (ago(260), ["type": "user_message", "message": "The Playwright checkout test fails about one run in five. Find out why and fix it."]),
+            cmd(ago(255)), cmd(ago(250)), patch(ago(240), ["tests/e2e/checkout.spec.ts", "tests/e2e/helpers/payment.ts"], in: web), cmd(ago(236)),
+            (ago(232), ["type": "task_complete", "last_agent_message": "The test raced the payment iframe. It now waits for the frame to load; 50 runs in a row pass."]),
+        ], open: false)
+
+        // Done yesterday: offline cart, with a short follow-up.
+        rollout("019a6b2e-mob5-4c1d-9f00-codexdemo004", cwd: mobile, start: ago(26 * 60), [
+            (ago(26 * 60), ["type": "user_message", "message": "Keep the cart when the phone goes offline: store it locally and sync when the connection is back."]),
+            cmd(ago(26 * 60 - 5)), patch(ago(26 * 60 - 20), ["src/cart/store.ts", "src/cart/sync.ts"], in: mobile),
+            (ago(26 * 60 - 25), ["type": "agent_message", "message": "The cart now lives in local storage and syncs on reconnect. Should I also show a banner while offline?"]),
+            (ago(26 * 60 - 24), ["type": "user_message", "message": "yes please"]),
+            patch(ago(26 * 60 - 15), ["src/components/OfflineBanner.tsx"], in: mobile),
+            (ago(26 * 60 - 12), ["type": "task_complete", "last_agent_message": "Added an offline banner that disappears once the cart has synced."]),
+        ], open: false)
     }
 
     private func ago(_ minutes: Double) -> Date { now.addingTimeInterval(-minutes * 60) }

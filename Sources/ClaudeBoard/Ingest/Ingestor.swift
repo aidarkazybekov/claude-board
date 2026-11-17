@@ -27,6 +27,10 @@ final class Ingestor: @unchecked Sendable {
     private var discovered = Discovery.Result()
     private var discoveredRoots: [String] = []
     private var fileCache: [String: (mtime: Date, file: TaskFile)] = [:]
+    private let codex = CodexReader()
+
+    /// Agents turned off in Settings; their history isn't read.
+    var disabledAgents: Set<Agent> = []
 
     /// Folders added or ignored in Settings; set from the main thread before a run.
     var extraFolders: [String] = []
@@ -154,6 +158,14 @@ final class Ingestor: @unchecked Sendable {
             result.sessions.append(s)
         }
 
+        // 4. Other agents.
+        if !disabledAgents.contains(.codex) {
+            if codex.update() { result.dataChanged = true }
+            result.transcriptTasks.append(contentsOf: codex.tasks)
+            result.transcriptSessionIDs.formUnion(codex.sessions.map(\.id))
+            result.sessions.append(contentsOf: codex.sessions)
+        }
+
         result.duration = Date().timeIntervalSince(started)
         return result
     }
@@ -230,20 +242,27 @@ final class Ingestor: @unchecked Sendable {
             }
             let t = tasks[i]
             let unfinished = t.subtasks.contains { $0.state != .completed }
+            let live = session?.isLive ?? false
+            // A question only counts while it can still be answered: the session is open, or it was
+            // active in the last day and isn't archived. Same rule for the CLI and the desktop app.
+            let lastSeen = max(session?.lastActivity ?? t.lastActivity, t.lastActivity)
+            let canAnswer = live || (Date().timeIntervalSince(lastSeen) < 86_400 && !(session?.archived ?? false))
             if let s = session, s.isBusy {
                 tasks[i].inferredStatus = .inProgress
-            } else if t.pendingAsk != nil {
+            } else if t.pendingAsk != nil && canAnswer {
                 tasks[i].inferredStatus = .needsYou
-            } else if let s = session, s.summaryCategory == "blocked" || s.needsAction != nil {
+            } else if let s = session, s.summaryCategory == "blocked" || s.needsAction != nil, canAnswer {
                 tasks[i].inferredStatus = .needsYou
             } else if t.origin == .history {
-                tasks[i].inferredStatus = (session?.isLive ?? false) ? .inProgress : .done
+                tasks[i].inferredStatus = live ? .inProgress : .done
             } else if !t.stats.replied {
-                tasks[i].inferredStatus = (session?.isLive ?? false) ? .inProgress : .todo
-            } else if unfinished {
-                tasks[i].inferredStatus = .inProgress
-            } else if let s = session, s.isLive, let reply = t.finalReply, reply.hasSuffix("?") {
+                tasks[i].inferredStatus = live ? .inProgress : .todo
+            } else if live, let reply = t.finalReply, reply.hasSuffix("?") {
+                // A closing question beats unchecked plan steps: the agent is waiting on you either way.
                 tasks[i].inferredStatus = .needsYou
+            } else if unfinished && live {
+                // Open steps only mean "in progress" while the session is still open.
+                tasks[i].inferredStatus = .inProgress
             } else {
                 tasks[i].inferredStatus = .done
             }

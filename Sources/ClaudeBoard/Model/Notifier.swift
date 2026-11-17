@@ -75,13 +75,13 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         guard Self.available else { return }
         let center = UNUserNotificationCenter.current()
         center.delegate = self
-        let resume = UNNotificationAction(identifier: Self.resumeAction, title: "Resume in Terminal", options: [.foreground])
+        let resume = UNNotificationAction(identifier: Self.resumeAction, title: "Resume", options: [.foreground])
         center.setNotificationCategories([UNNotificationCategory(identifier: Self.category, actions: [resume], intentIdentifiers: [])])
     }
 
     /// Called after each merge with the statuses from before it.
     @MainActor func process(before: [String: TaskStatus]?, store: Store) {
-        let changes = StatusChanges.detect(before: before, after: store.items, kinds: Self.kinds, alreadySent: sent)
+        let changes = StatusChanges.detect(before: before, after: store.visibleItems, kinds: Self.kinds, alreadySent: sent)
         guard !changes.isEmpty else { return }
         changes.forEach { sent.insert($0.dedupeKey) }
         let requests: [UNNotificationRequest]
@@ -89,8 +89,10 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             // A burst (e.g. waking from sleep): one summary instead of a stack of banners.
             let waiting = changes.filter { $0.kind == .needsYou }.count
             let c = UNMutableNotificationContent()
-            c.title = waiting > 0 ? "\(waiting) Claude sessions are waiting on you" : "Claude finished \(changes.count) requests"
-            c.body = "Open ClaudeBoard to see them."
+            let names = Array(Set(changes.compactMap { store.task($0.id)?.agentKind?.title })).sorted()
+            c.title = waiting > 0 ? "\(waiting) agents need you" : "Your agents finished \(changes.count) requests"
+            c.subtitle = names.joined(separator: ", ")
+            c.body = "Open the board to see them in one place."
             c.sound = .default
             c.userInfo = ["scope": waiting > 0 ? "inbox" : "all"]
             requests = [UNNotificationRequest(identifier: "burst-\(Date().timeIntervalSince1970)", content: c, trigger: nil)]
@@ -99,7 +101,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                 guard let t = store.task(ch.id) else { return nil }
                 let p = store.project(t.projectID)
                 let c = UNMutableNotificationContent()
-                c.title = ch.kind == .needsYou ? "Claude is waiting on you" : "Claude finished"
+                let agent = (t.agentKind ?? .claudeCode).title
+                c.title = ch.kind == .needsYou ? "\(agent) is waiting on you" : "\(agent) finished"
                 c.subtitle = "\(store.key(for: t)) · \(p.name): \(StatusChanges.clip(t.title, 60))"
                 c.body = ch.kind == .needsYou ? StatusChanges.question(of: t) : StatusChanges.clip(Markdown.plain(t.recap ?? t.finalReply ?? t.title))
                 c.sound = ch.kind == .needsYou ? .default : nil
@@ -115,9 +118,9 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// From Settings: shows what a "waiting on you" notification looks like.
     func sendTest() {
         let c = UNMutableNotificationContent()
-        c.title = "Claude is waiting on you"
-        c.subtitle = "WEB-12 · web: Checkout redesign"
-        c.body = "This is a test. ClaudeBoard shows Claude's question here when a session stops to ask you something."
+        c.title = "Codex is waiting on you"
+        c.subtitle = "API-6 · api: Shared rate-limit store"
+        c.body = "This is a test. When an agent stops to ask you something, its question shows here."
         c.sound = .default
         deliver([UNNotificationRequest(identifier: "test-\(Date().timeIntervalSince1970)", content: c, trigger: nil)])
     }

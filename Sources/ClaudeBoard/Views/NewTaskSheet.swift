@@ -16,60 +16,76 @@ struct NewTaskSheet: View {
     @FocusState private var titleFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("New Task").font(.title3.weight(.semibold)).padding([.horizontal, .top], 20)
-            Form {
-                TextField("What has to be done?", text: $title, axis: .vertical)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("New task").font(Studio.display(22)).foregroundStyle(Studio.ink)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("What has to be done?").font(Studio.text(12.5, .bold)).foregroundStyle(Studio.ink2)
+                TextField("", text: $title, prompt: Text("Pick an image CDN for product photos"), axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(Studio.display(18, .bold))
                     .lineLimit(1...3)
                     .focused($titleFocused)
-                LabeledContent("Project") {
+                    .padding(.horizontal, 15)
+                    .padding(.vertical, 11)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Studio.well))
+            }
+
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Project").font(Studio.text(12.5, .bold)).foregroundStyle(Studio.ink2)
                     ProjectMenu(selection: $projectID)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Capsule().fill(Studio.well))
                 }
-                Picker("Save to", selection: $destination) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Status").font(Studio.text(12.5, .bold)).foregroundStyle(Studio.ink2)
+                    PillTabs(selection: $status, items: [(.backlog, "Backlog"), (.todo, "To do"), (.inProgress, "In progress")], size: 12)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Priority").font(Studio.text(12.5, .bold)).foregroundStyle(Studio.ink2)
+                PillTabs(selection: $priority, items: [(.none, "None"), (.low, "Low"), (.medium, "Medium"), (.high, "High"), (.urgent, "Urgent")], size: 12)
+            }
+
+            HStack(spacing: 12) {
+                WellField(title: "Area", text: $area, prompt: "Frontend, Infra…")
+                WellField(title: "Labels", text: $labels, prompt: "images, cdn")
+            }
+
+            editor("Details", text: $notes, minHeight: 64)
+            editor("Done when (one step per line)", text: $steps, minHeight: 64)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Save to").font(Studio.text(12.5, .bold)).foregroundStyle(Studio.ink2)
+                HStack(spacing: 8) {
                     if let pid = projectID {
                         ForEach(store.folders(for: pid), id: \.self) { f in
-                            Label(Paths.tilde(f), systemImage: "folder").tag(TaskDestination.folder(f))
+                            choice(.folder(f), "\(Paths.tilde(f)), shared with the repo")
                         }
                     }
-                    Label("This Mac only", systemImage: "laptopcomputer").tag(TaskDestination.local)
-                }
-                .help("A backlog folder is a set of markdown files your team and Claude can read. 'This Mac only' keeps it in ClaudeBoard.")
-                HStack {
-                    Picker("Status", selection: $status) {
-                        Text("Backlog").tag(TaskStatus.backlog)
-                        Text("To Do").tag(TaskStatus.todo)
-                        Text("In Progress").tag(TaskStatus.inProgress)
-                    }
-                    Picker("Priority", selection: $priority) {
-                        ForEach(Priority.allCases.reversed()) { Text($0.title).tag($0) }
-                    }
-                }
-                HStack {
-                    TextField("Area", text: $area, prompt: Text("Frontend, Infra…"))
-                    TextField("Labels", text: $labels, prompt: Text("bug, auth"))
-                }
-                Section("Details") {
-                    TextEditor(text: $notes).frame(minHeight: 90).font(.callout)
-                }
-                Section("Done when (one step per line)") {
-                    TextEditor(text: $steps).frame(minHeight: 60).font(.callout)
+                    choice(.local, "Only this Mac")
                 }
             }
-            .formStyle(.grouped)
-            HStack {
-                Text("“Create & Start” opens Terminal and gives the task to Claude Code in the project folder.")
-                    .font(.caption).foregroundStyle(.secondary)
+
+            HStack(spacing: 10) {
+                Button("Cancel") { dismiss() }
+                    .buttonStyle(.studio(.quiet))
+                    .keyboardShortcut(.cancelAction)
                 Spacer()
-                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("Create & Start") { create(start: true) }
-                    .disabled(!valid)
-                Button("Create") { create(start: false) }
+                Button("Create") { create(start: nil) }
+                    .buttonStyle(.studio(.secondary))
                     .keyboardShortcut(.defaultAction)
                     .disabled(!valid)
+                CreateAndStartButton(enabled: valid) { agent in create(start: agent) }
             }
-            .padding(16)
+            .padding(.top, 4)
         }
-        .frame(width: 580, height: 660)
+        .padding(26)
+        .frame(width: 640)
+        .background(Studio.surface)
         .onAppear {
             projectID = store.newTaskProject ?? store.scopeProjectID ?? store.lastQuickAddProject
                 ?? store.items.first(where: { $0.projectID.hasPrefix("/") })?.projectID
@@ -81,9 +97,39 @@ struct NewTaskSheet: View {
         }
     }
 
+    private func editor(_ label: String, text: Binding<String>, minHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label).font(Studio.text(12.5, .bold)).foregroundStyle(Studio.ink2)
+            TextEditor(text: text)
+                .font(Studio.text(13.5, .medium))
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: minHeight)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Studio.well))
+        }
+    }
+
+    private func choice(_ d: TaskDestination, _ label: String) -> some View {
+        let on = destination == d
+        return Button { destination = d } label: {
+            HStack(spacing: 7) {
+                Image(systemName: on ? "largecircle.fill.circle" : "circle")
+                Text(label).lineLimit(1)
+            }
+            .font(Studio.text(12.5, .bold))
+            .foregroundStyle(on ? Studio.ink : Studio.ink2)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(on ? Studio.well : .clear))
+            .overlay(Capsule().stroke(Studio.line, lineWidth: on ? 0 : 1))
+        }
+        .buttonStyle(.plain)
+        .help(d == .local ? "Keeps the task in the app on this Mac" : "A Markdown file in the backlog folder, which your team and your agents can read")
+    }
+
     private var valid: Bool { !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && projectID != nil }
 
-    private func create(start: Bool) {
+    private func create(start agent: Agent?) {
         guard let pid = projectID else { return }
         let t = store.createTask(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -96,9 +142,51 @@ struct NewTaskSheet: View {
             area: area.trimmingCharacters(in: .whitespaces).isEmpty ? nil : area.trimmingCharacters(in: .whitespaces),
             destination: destination
         )
-        if start, let t { store.startWithClaude(t.id) }
+        if let agent, let t { store.start(t.id, with: agent) }
         store.showInspector = true
         store.newTaskProject = nil
         dismiss()
+    }
+}
+
+/// "Create and start with Codex ▾": creates the task and hands it to the default agent, or pick another.
+struct CreateAndStartButton: View {
+    @Environment(Store.self) private var store
+    var enabled: Bool
+    let action: (Agent) -> Void
+
+    var body: some View {
+        let agent = store.defaultAgent
+        HStack(spacing: 0) {
+            Button { action(agent) } label: {
+                Text("Create and start with \(agent.title)")
+                    .font(Studio.text(13, .bold))
+                    .padding(.leading, 15)
+                    .padding(.trailing, 8)
+                    .padding(.vertical, 7)
+            }
+            .buttonStyle(.plain)
+            .help(agent.runsInTerminal ? "Creates the task and opens \(agent.title) on it in Terminal"
+                  : "Creates the task and opens the project in \(agent.title), with the task on the clipboard")
+            Rectangle().fill(Studio.onInk.opacity(0.25)).frame(width: 1, height: 18)
+            Menu {
+                ForEach(Agent.allCases) { a in
+                    Button(a.title) { action(a) }
+                }
+            } label: {
+                Image(systemName: "chevron.down").font(.system(size: 9, weight: .heavy))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .padding(.leading, 6)
+            .padding(.trailing, 12)
+            .help("Start with another agent")
+        }
+        .foregroundStyle(Studio.onInk)
+        .tint(Studio.onInk)
+        .background(Capsule().fill(Studio.ink))
+        .opacity(enabled ? 1 : 0.4)
+        .disabled(!enabled)
     }
 }

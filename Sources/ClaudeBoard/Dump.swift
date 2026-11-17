@@ -19,6 +19,16 @@ enum Dump {
         print("sessions: \(r.sessions.count) (\(r.transcriptSessionIDs.count) with transcripts, \(r.live.count) live)")
         print("tickets: \(all.count)  prompt=\(all.filter { $0.origin == .prompt }.count) history=\(all.filter { $0.origin == .history }.count) suggested=\(all.filter { $0.origin == .suggested }.count)")
         print("follow-ups folded: \(all.reduce(0) { $0 + $1.followUps.count })")
+        MainActor.assumeIsolated {
+            let store = Store()
+            store.merge(r)
+            let agentTickets = store.items.filter { $0.agentKind != nil && $0.origin != .suggested }
+            let st = Dictionary(grouping: store.items.filter { !$0.hidden }, by: \.status).map { "\($0.key.title)=\($0.value.count)" }.sorted().joined(separator: " ")
+            print("board after merge: \(store.items.count) tickets (\(agentTickets.count) agent requests; \(all.count - agentTickets.count) merged away or planned) · \(st)")
+            print("waiting on you: \(store.waitingOnYou.count) · folded into tasks: \(store.items.filter { $0.folded == true }.count)")
+        }
+        print("by agent: " + Agent.allCases.map { a in "\(a.title)=\(all.filter { $0.agentKind == a }.count)" }.joined(separator: " ")
+              + " · live sessions: " + r.sessions.filter(\.isLive).map { "\($0.agentKind.title)" }.joined(separator: ","))
         print("")
         print("by project:")
         for (pid, ts) in Dictionary(grouping: all, by: \.projectID).sorted(by: { $0.value.count > $1.value.count }) {

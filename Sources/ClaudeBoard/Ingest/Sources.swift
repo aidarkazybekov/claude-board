@@ -167,6 +167,31 @@ struct LiveSession {
 }
 
 enum LiveSessions {
+    private static let ctime: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "EEE MMM d HH:mm:ss yyyy"
+        return f
+    }()
+
+    /// Whether the running process `pid` started at `recorded` (ctime format, UTC). Unparseable → trusted.
+    static func sameStart(pid: Int32, recorded: String) -> Bool {
+        let normalized = recorded.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard let want = ctime.date(from: normalized), let started = processStart(pid) else { return true }
+        return abs(started.timeIntervalSince(want)) < 3
+    }
+
+    static func processStart(_ pid: Int32) -> Date? {
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        guard sysctl(&mib, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
+        let tv = info.kp_proc.p_un.__p_starttime
+        guard tv.tv_sec > 0 else { return nil }
+        return Date(timeIntervalSince1970: TimeInterval(tv.tv_sec) + TimeInterval(tv.tv_usec) / 1_000_000)
+    }
+
     static func load() -> [String: LiveSession] {
         let dir = Paths.liveSessionsDir
         var out: [String: LiveSession] = [:]
@@ -176,8 +201,10 @@ enum LiveSessions {
                   let pid = (o["pid"] as? NSNumber)?.int32Value,
                   let sid = o["sessionId"] as? String
             else { continue }
-            // kill(pid, 0) == 0 or EPERM means the process exists.
+            // kill(pid, 0) == 0 or EPERM means the process exists. The pid may have been reused by
+            // another program since, so its start time must match the one Claude Code wrote down.
             guard kill(pid, 0) == 0 || errno == EPERM else { continue }
+            if let recorded = o["procStart"] as? String, !Self.sameStart(pid: pid, recorded: recorded) { continue }
             out[sid] = LiveSession(
                 pid: pid, sessionID: sid, cwd: (o["cwd"] as? String) ?? "",
                 status: (o["status"] as? String) ?? "idle", name: o["name"] as? String,

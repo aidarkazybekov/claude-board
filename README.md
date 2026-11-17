@@ -4,10 +4,11 @@
 
 # ClaudeBoard
 
-### Everything you ask Claude Code, on one board.
+### Everything you ask your coding agents, on one board.
 
-A native Mac app that turns your Claude Code sessions into tickets, next to the tasks you plan for
-each project. See what Claude is working on, what it finished, and which sessions are waiting on you.
+A native Mac app that turns your Claude Code and Codex sessions into tickets, next to the tasks you
+plan for each project. See what each agent is working on, what it finished, and which ones are
+waiting on you, then hand the next task to whichever agent you like.
 
 [![CI](https://github.com/aidarkazybekov/claude-board/actions/workflows/ci.yml/badge.svg)](https://github.com/aidarkazybekov/claude-board/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/aidarkazybekov/claude-board)](https://github.com/aidarkazybekov/claude-board/releases/latest)
@@ -23,7 +24,7 @@ each project. See what Claude is working on, what it finished, and which session
   <img src="docs/site/hero-light.jpg" width="920" alt="ClaudeBoard: Claude Code sessions and planned tasks on one board, with a ticket's plan and outcome open on the right">
 </picture>
 
-<sub>Free and open source · Reads Claude Code's local logs, never changes them · No account, no server, no analytics</sub>
+<sub>Free and open source · Reads your agents' local history, never changes it · No account, no server, no analytics</sub>
 
 </div>
 
@@ -37,9 +38,10 @@ It downloads the latest release, checks its SHA-256, installs `ClaudeBoard.app` 
 (or `~/Applications`) and opens it, with no security prompt to click through. Run it again to update.
 [Read the script](docs/install.sh) first if you like; it's about 70 lines.
 
-**Needs** macOS 15 Sequoia or later and Claude Code (the CLI or the desktop app's Code tab) on the
-same Mac. On first launch, pick the folders that hold your code; every git repo inside becomes a
-project.
+**Needs** macOS 15 Sequoia or later and a coding agent on the same Mac: Claude Code (the CLI or
+the desktop app's Code tab) or Codex (the CLI or the desktop app). Cursor, Gemini CLI and Antigravity
+are detected and can be started from the board; reading their chats is next. On first launch, pick
+the folders that hold your code; every git repo inside becomes a project.
 
 <details>
 <summary><b>Other ways to install:</b> download the zip, or build from source</summary>

@@ -73,7 +73,7 @@ struct ClaudeBoardApp: App {
         Settings {
             SettingsView().environment(store)
         }
-        .defaultSize(width: 560, height: 620)
+        .defaultSize(width: 900, height: 860)
     }
 }
 

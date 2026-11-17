@@ -45,6 +45,10 @@ CLAUDEBOARD_LOG=/tmp/claudeboard.log CLAUDEBOARD_NOTIFY_DRYRUN=1 build/ClaudeBoa
 # Render every screen to PNGs, handy for UI PRs.
 .build/debug/ClaudeBoard --snapshot /tmp/cb-shots
 
+# Render every screen of the demo board to PNGs, light and dark, without showing a window or a Dock
+# icon (safe to run while you work). Good for checking a UI change.
+.build/debug/ClaudeBoard --render /tmp/cb-render
+
 # Run on the sample "Acme" demo board (never reads your real data). Add --snapshot <dir> for
 # the curated README scenes, then `swift scripts/make-media.swift <dir> docs/media build/media`.
 .build/debug/ClaudeBoard --demo
@@ -75,7 +79,13 @@ These keep the app trustworthy. Please don't break them in a PR:
 - Branch from `main`. One topic per PR.
 - Run `--selftest` and make sure it passes. If you change parsing, merge or backlog-file logic,
   add a check to `Sources/ClaudeBoard/SelfTest.swift`.
-- For UI changes, attach a screenshot. `--snapshot` works without Screen Recording permission.
+- For UI changes, attach a screenshot. `--render` and `--snapshot` work without Screen Recording permission.
+- The look lives in `Views/Studio.swift` (colors with dark-mode twins, type, buttons, pills) and
+  `Palette` in `Views/Components.swift`. Use those tokens instead of system colors.
+- Agent readers live in `Ingest/`: `TranscriptParser` (Claude Code) and `CodexReader` (Codex, its
+  SQLite databases first, JSONL rollouts as a fallback). Each agent's data folder can be pointed
+  elsewhere for tests: `CLAUDEBOARD_CLAUDE_DIR`, `CLAUDEBOARD_CODEX_DIR`, `CLAUDEBOARD_CURSOR_DIR`,
+  `CLAUDEBOARD_GEMINI_DIR`, `CLAUDEBOARD_ANTIGRAVITY_DIR`.
   **Use the demo board (`--demo`), not your real board**: real boards show your prompts and
   project names.
 - CI builds the app and runs the self-test on every PR.

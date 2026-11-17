@@ -74,7 +74,9 @@ enum TaskFolder {
     // MARK: Parsing
 
     static func parse(_ path: String, folder: String) -> TaskFile? {
-        guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { return nil }
+        // Files saved on Windows use CRLF line ends; read them like any other.
+        guard let raw = try? String(contentsOfFile: path, encoding: .utf8) else { return nil }
+        let text = raw.replacingOccurrences(of: "\r\n", with: "\n")
         let attrs = try? FileManager.default.attributesOfItem(atPath: path)
         let mtime = attrs?[.modificationDate] as? Date ?? Date()
         let created = attrs?[.creationDate] as? Date ?? mtime
@@ -213,8 +215,7 @@ enum TaskFolder {
 
     /// Sets (or removes, with nil) front-matter keys, keeping every other line as it was.
     static func updateFields(_ path: String, _ changes: [(String, String?)]) throws {
-        let text = try String(contentsOfFile: path, encoding: .utf8)
-        var lines = text.components(separatedBy: "\n")
+        var (lines, crlf) = try readLines(path)
         var end = -1
         if lines.first?.trimmingCharacters(in: .whitespaces) == "---" {
             for i in 1..<lines.count where lines[i].trimmingCharacters(in: .whitespaces) == "---" { end = i; break }
@@ -251,12 +252,22 @@ enum TaskFolder {
                 end -= (j - found)
             }
         }
-        try lines.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
+        try write(lines, crlf: crlf, to: path)
+    }
+
+    /// A file's lines with CRLF line ends normalized, and whether it used them (so writes keep them).
+    static func readLines(_ path: String) throws -> (lines: [String], crlf: Bool) {
+        let text = try String(contentsOfFile: path, encoding: .utf8)
+        let crlf = text.contains("\r\n")
+        return (text.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n"), crlf)
+    }
+
+    static func write(_ lines: [String], crlf: Bool, to path: String) throws {
+        try lines.joined(separator: crlf ? "\r\n" : "\n").write(toFile: path, atomically: true, encoding: .utf8)
     }
 
     static func setBody(_ path: String, _ body: String) throws {
-        let text = try String(contentsOfFile: path, encoding: .utf8)
-        let lines = text.components(separatedBy: "\n")
+        let (lines, crlf) = try readLines(path)
         var head: [String] = []
         if lines.first?.trimmingCharacters(in: .whitespaces) == "---" {
             for i in 1..<lines.count where lines[i].trimmingCharacters(in: .whitespaces) == "---" {
@@ -264,7 +275,7 @@ enum TaskFolder {
             }
         }
         let out = head.isEmpty ? body : head.joined(separator: "\n") + "\n" + body
-        try out.write(toFile: path, atomically: true, encoding: .utf8)
+        try write(out.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n"), crlf: crlf, to: path)
     }
 
     /// Flips one checklist line (by its index in the body).
@@ -399,8 +410,8 @@ enum TaskFolder {
     }
 
     static func updateIndexRow(folder: String, id: String, title: String? = nil, status: String? = nil, priority: String? = nil) {
-        guard let path = indexPath(folder), let text = try? String(contentsOfFile: path, encoding: .utf8) else { return }
-        var lines = text.components(separatedBy: "\n")
+        guard let path = indexPath(folder), let (read, crlf) = try? readLines(path) else { return }
+        var lines = read
         guard let t = table(lines), let idCol = t.cols["id"] else { return }
         let idRe = try? NSRegularExpression(pattern: "(^|[^A-Za-z0-9-])" + NSRegularExpression.escapedPattern(for: id) + "([^0-9]|$)")
         for i in (t.header + 2)...max(t.header + 2, t.lastRow) where i <= t.lastRow {
@@ -412,15 +423,15 @@ enum TaskFolder {
             let new = row(c)
             if new != lines[i] {
                 lines[i] = new
-                try? lines.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
+                try? write(lines, crlf: crlf, to: path)
             }
             return
         }
     }
 
     static func appendIndexRow(folder: String, id: String, relPath: String, title: String, area: String, priority: String, status: String) {
-        guard let path = indexPath(folder), let text = try? String(contentsOfFile: path, encoding: .utf8) else { return }
-        var lines = text.components(separatedBy: "\n")
+        guard let path = indexPath(folder), let (read, crlf) = try? readLines(path) else { return }
+        var lines = read
         guard let t = table(lines) else { return }
         let width = cells(lines[t.header]).count
         var c = Array(repeating: "", count: width)

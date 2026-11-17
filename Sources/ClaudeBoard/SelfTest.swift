@@ -103,7 +103,7 @@ enum SelfTest {
         let planned = store.task(manual.id)
         check(planned != nil && store.key(for: planned!) == manualKey, "planned task keeps key \(manualKey)")
         check(Set(planned?.claudeLinks ?? []) == Set([imported[2].id, imported[1].id]), "both Claude tickets linked to it")
-        check(store.task(imported[2].id)?.hidden == true, "ticket launched from the task is folded (hidden)")
+        check(store.task(imported[2].id)?.folded == true && store.scoped.allSatisfy { $0.id != imported[2].id }, "ticket launched from the task is folded into it")
         check(store.task(imported[1].id)?.hidden == false && store.task(imported[1].id)?.plannedLink == manual.id, "ticket that only mentions the key stays visible, linked")
         if let f = store.task(imported[0].id) {
             store.setStatus(f.id, f.inferredStatus == .done ? .todo : .done)
@@ -308,6 +308,7 @@ enum SelfTest {
         setenv("CLAUDEBOARD_ROOTS", rr, 1)
         setenv("CLAUDEBOARD_CLAUDE_DIR", emptyClaude, 1)
         setenv("CLAUDEBOARD_DESKTOP_DIR", emptyClaude + "/desktop", 1)
+        setenv("CLAUDEBOARD_CODEX_DIR", emptyClaude + "/codex", 1)
         func task(_ path: String, _ id: String) {
             try! "---\nid: \(id)\ntitle: Task \(id)\nstatus: todo\n---\n".write(toFile: path, atomically: true, encoding: .utf8)
         }
@@ -320,6 +321,8 @@ enum SelfTest {
         task(rr + "/side/backlog/tasks/T-001-c.md", "T-001")
         let r3 = ing.run()
         check(r3.taskFolders.contains(rr + "/side/backlog") && r3.plannedTasks.count == 3, "a new backlog folder appears on the next refresh")
+
+        auditChecks(tmp)
 
         print("Demo world")
         Demo.prepare()
@@ -338,5 +341,218 @@ enum SelfTest {
         try? FileManager.default.removeItem(at: tmp)
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) check(s) failed")
         return failures == 0 ? 0 : 1
+    }
+
+    // MARK: - Fixes from the data audit (2026-11-16), one check each
+
+    static func auditChecks(_ tmp: URL) {
+        let fm = FileManager.default
+        func line(_ o: [String: Any]) -> String { String(data: try! JSONSerialization.data(withJSONObject: o), encoding: .utf8)! }
+        func at(_ s: Double) -> String {
+            let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return f.string(from: Date().addingTimeInterval(s))
+        }
+        func transcript(_ name: String, _ lines: [String]) -> TranscriptParser {
+            let url = tmp.appendingPathComponent(name + ".jsonl")
+            try! (lines.joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
+            let p = TranscriptParser(url: url)
+            p.update()
+            return p
+        }
+        let cwd = Roots.primary + "/audit-app"
+        func user(_ content: Any, _ t: Double, uuid: String = UUID().uuidString) -> String {
+            line(["type": "user", "uuid": uuid, "timestamp": at(t), "cwd": cwd, "origin": ["kind": "human"], "message": ["role": "user", "content": content]])
+        }
+        func asst(_ parts: [[String: Any]], _ t: Double) -> String {
+            line(["type": "assistant", "timestamp": at(t), "cwd": cwd, "message": ["role": "assistant", "content": parts]])
+        }
+        func result(_ id: String, _ text: String, _ t: Double) -> String {
+            line(["type": "user", "timestamp": at(t), "message": ["role": "user", "content": [["type": "tool_result", "tool_use_id": id, "content": text]]]])
+        }
+
+        print("Audit fixes")
+        // 2. An answered question (or approved plan) no longer waits on you.
+        let asked = transcript("audit-ask", [
+            user("Set up the deploy pipeline for staging", -600),
+            asst([["type": "tool_use", "id": "ask-1", "name": "AskUserQuestion", "input": ["questions": [["question": "Which cloud?"]]]]], -590),
+            result("ask-1", "AWS", -580),
+            asst([["type": "text", "text": "Using AWS. Pipeline added."]], -570),
+        ])
+        check(asked.tasks.first?.pendingAsk == nil, "an answered question is cleared")
+        let open = transcript("audit-ask-open", [
+            user("Set up the deploy pipeline for production", -600),
+            asst([["type": "tool_use", "id": "ask-2", "name": "AskUserQuestion", "input": ["questions": [["question": "Which region?"]]]]], -590),
+        ])
+        check(open.tasks.first?.pendingAsk == "Which region?", "an unanswered question still waits")
+
+        // 5. A screenshot with a short reply is a follow-up, not a new ticket.
+        let image = transcript("audit-image", [
+            user("Make the header sticky on the product page", -500),
+            asst([["type": "text", "text": "Done. Should I also shrink it on scroll?"]], -490),
+            user([["type": "image", "source": [:]], ["type": "text", "text": "yes"]], -480),
+        ])
+        check(image.tasks.count == 1 && image.tasks.first?.followUps.first?.text.contains("image") == true,
+              "image + short reply folds into the request")
+
+        // Withdrawn suggestions leave the backlog.
+        let dismissed = transcript("audit-dismiss", [
+            user("Clean up the auth module and its tests", -400),
+            asst([["type": "tool_use", "id": "ss-1", "name": "mcp__ccd_session__start_session",
+                   "input": ["initiation": "own_initiative", "title": "Rotate the signing keys", "prompt": "brief"]]], -390),
+            result("ss-1", "Proposed as task_ab12cd34", -389),
+            asst([["type": "tool_use", "id": "dt-1", "name": "mcp__ccd_session__dismiss_task", "input": ["task_id": "task_ab12cd34"]]], -380),
+        ])
+        check(dismissed.suggestions.first?.hidden == true, "a withdrawn suggestion is hidden")
+
+        // 6 and 7. Status rules: open steps only count while the session is open; old questions expire.
+        func ticket(_ replied: Bool, ask: String? = nil, reply: String? = nil, steps: Bool = false, age: Double = 60) -> TaskItem {
+            var t = TaskItem(id: "x:\(UUID().uuidString)", origin: .prompt, projectID: cwd, sessionID: "s", title: "t", prompt: "p",
+                             createdAt: Date().addingTimeInterval(-age), updatedAt: Date().addingTimeInterval(-age), inferredStatus: .todo)
+            t.stats.replied = replied
+            t.pendingAsk = ask
+            t.finalReply = reply
+            if steps { t.subtasks = [Subtask(id: "plan-0", title: "a", state: .pending)] }
+            return t
+        }
+        func session(live: Bool, archived: Bool = false, age: Double = 60) -> SessionInfo {
+            var s = SessionInfo(id: "s", projectID: cwd, title: "s", cwd: cwd, startedAt: Date().addingTimeInterval(-age), lastActivity: Date().addingTimeInterval(-age))
+            s.isLive = live
+            s.liveStatus = live ? "idle" : nil
+            s.archived = archived
+            return s
+        }
+        func status(_ t: TaskItem, _ s: SessionInfo) -> TaskStatus {
+            var ts = [t]
+            Ingestor.inferStatuses(&ts, session: s)
+            return ts[0].inferredStatus
+        }
+        check(status(ticket(true, steps: true, age: 7200), session(live: false, age: 7200)) == .done, "closed session with open steps is done")
+        check(status(ticket(true, steps: true), session(live: true)) == .inProgress, "open session with open steps is in progress")
+        check(status(ticket(true, reply: "Should I go on?", steps: true), session(live: true)) == .needsYou, "a closing question beats open steps")
+        check(status(ticket(true, ask: "Ship it?", age: 3 * 86_400), session(live: false, age: 3 * 86_400)) == .done, "a question from days ago expires")
+        check(status(ticket(true, ask: "Ship it?"), session(live: false, archived: true)) == .done, "an archived session's question doesn't wait")
+        check(status(ticket(true, ask: "Ship it?"), session(live: false)) == .needsYou, "a recent question waits, CLI or desktop alike")
+
+        // Store-level fixes.
+        let root = Roots.primary
+        let a = root + "/audit-a", b = root + "/audit-b"
+        func req(_ id: String, project: String, prompt: String, session sid: String, age: Double, replied: Bool = true, live: Bool = false) -> TaskItem {
+            var t = TaskItem(id: id, origin: .prompt, projectID: project, sessionID: sid, title: prompt, prompt: prompt,
+                             createdAt: Date().addingTimeInterval(-age), updatedAt: Date().addingTimeInterval(-age), inferredStatus: .todo, cwd: project)
+            t.stats.replied = replied
+            return t
+        }
+        func sess(_ id: String, _ project: String, age: Double, live: Bool = false) -> SessionInfo {
+            var s = SessionInfo(id: id, projectID: project, title: id, cwd: project, startedAt: Date().addingTimeInterval(-age), lastActivity: Date().addingTimeInterval(-age))
+            s.isLive = live
+            return s
+        }
+        var plannedFile = TaskItem(id: "file:\(a)/backlog#T-1", origin: .file, projectID: "", sessionID: nil, title: "Rotate keys", prompt: "",
+                                   createdAt: Date(), updatedAt: Date(), inferredStatus: .todo)
+        plannedFile.folder = a + "/backlog"
+        plannedFile.externalID = "T-1"
+        plannedFile.filePath = a + "/backlog/T-1.md"
+        var r = IngestResult()
+        r.repos = [a, b]
+        ProjectRegistry.shared.set(repos: [a, b])
+        r.plannedTasks = [plannedFile]
+        r.transcriptTasks = [
+            req("sOld:m1", project: a, prompt: "Add billing export", session: "sOld", age: 9000),
+            req("sNew:m1", project: a, prompt: "Add billing export", session: "sNew", age: 8000),
+            req("sNew:m2", project: b, prompt: "work on T-1 please", session: "sNew", age: 7000),
+            req("sNew:m3", project: a, prompt: "[T-1] Rotate keys", session: "sNew", age: 6000),
+            req("sOld:m4", project: a, prompt: "Old cleanup", session: "sOld", age: 40 * 86_400, replied: false),
+        ]
+        r.transcriptSessionIDs = ["sOld", "sNew"]
+        r.sessions = [sess("sOld", a, age: 9000), sess("sNew", a, age: 6000)]
+        let st = Store()
+        st.merge(r)
+        check(st.items.filter { $0.title == "Add billing export" }.count == 1, "a resumed session's copied message is one ticket")
+        check(st.task("sNew:m2")?.plannedLink == nil, "a key from another project doesn't link")
+        check(st.task("sNew:m3")?.plannedLink == "file:\(a)/backlog#T-1", "a key in the same project links")
+        check(st.task("sNew:m3")?.folded == true && st.task("sNew:m3")?.hidden == false, "a ticket started from a task is folded, not hidden")
+
+        // 4. A status you set holds until the agent does something new.
+        st.setStatus("sNew:m2", .inProgress)
+        check(st.task("sNew:m2")?.status == .inProgress, "your status holds")
+        var r2 = r
+        r2.transcriptTasks = r.transcriptTasks.map { t in
+            var t = t
+            if t.id == "sNew:m2" { t.updatedAt = Date().addingTimeInterval(60) }
+            return t
+        }
+        st.merge(r2)
+        check(st.task("sNew:m2")?.status == .done && st.task("sNew:m2")?.statusOverridden == false, "new agent activity replaces your status")
+
+        // 12. An old ticket you mark done stays in this week's view.
+        st.period = .week
+        st.setStatus("sOld:m4", .done)
+        check(st.periodScoped.contains { $0.id == "sOld:m4" }, "an old ticket moved to Done stays visible")
+
+        // 8. Project keys never move.
+        let keyA = st.project(a).key
+        var r3 = r2
+        let a2 = root + "/zz/audit-a"
+        r3.repos = [a, b, a2]
+        r3.transcriptTasks.append(req("sNew:m5", project: a2, prompt: "Same initials", session: "sNew", age: 100))
+        st.merge(r3)
+        check(st.project(a).key == keyA && st.project(a2).key != keyA, "a same-named project doesn't take an existing key (\(keyA), \(st.project(a2).key))")
+
+        // 9. Hidden projects stay out of the menu bar.
+        var r4 = r3
+        r4.transcriptTasks.append({ var t = req("sNew:m6", project: b, prompt: "Pick a region", session: "sNew", age: 30); t.pendingAsk = "EU or US?"; return t }())
+        st.merge(r4)
+        let before = st.waitingOnYou.count
+        st.updateProject(b) { $0.hidden = true }
+        check(before > 0 && st.waitingOnYou.allSatisfy { $0.projectID != b }, "a hidden project's question leaves the menu bar")
+        st.updateProject(b) { $0.hidden = nil }
+
+        // 10. "7 days" is the same seven calendar days everywhere.
+        let today = Calendar.current.startOfDay(for: Date())
+        check(Period.week.since == Calendar.current.date(byAdding: .day, value: -6, to: today), "a week is today and the six days before")
+
+        // 14. Worktrees land in their repo.
+        check(!ProjectResolver.projectID(for: a + "/.conductor-worktrees/fix-1").contains("worktree"), "a hidden worktree folder belongs to its repo")
+        check(Store.genericNames.contains("app"), "generic folder names don't pick a project")
+
+        // 15. Backlog files with Windows line ends.
+        let crlfDir = tmp.appendingPathComponent("crlf/backlog").path
+        try? fm.createDirectory(atPath: crlfDir, withIntermediateDirectories: true)
+        let crlfFile = crlfDir + "/T-9.md"
+        try! "---\r\nid: T-9\r\ntitle: Windows task\r\nstatus: todo\r\n---\r\nBody\r\n".write(toFile: crlfFile, atomically: true, encoding: .utf8)
+        check(TaskFolder.parse(crlfFile, folder: crlfDir)?.fields["title"] == "Windows task", "CRLF front matter is read")
+        try? TaskFolder.updateFields(crlfFile, [("status", "done")])
+        let after = (try? String(contentsOfFile: crlfFile, encoding: .utf8)) ?? ""
+        check(after.contains("status: done\r\n") && !after.contains("\r\r"), "a CRLF file keeps its line ends when edited")
+
+        // Live sessions: a reused process id isn't a live session.
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX"); f.timeZone = TimeZone(identifier: "UTC"); f.dateFormat = "EEE MMM d HH:mm:ss yyyy"
+        if let mine = LiveSessions.processStart(getpid()) {
+            check(LiveSessions.sameStart(pid: getpid(), recorded: f.string(from: mine)), "this process matches its own start time")
+            check(!LiveSessions.sameStart(pid: getpid(), recorded: f.string(from: mine.addingTimeInterval(-3600))), "a different start time is a reused pid")
+        }
+
+        print("Codex")
+        let codexDir = tmp.appendingPathComponent("codex").path
+        setenv("CLAUDEBOARD_CODEX_DIR", codexDir, 1)
+        try? fm.createDirectory(atPath: codexDir + "/sessions/2026/11/17", withIntermediateDirectories: true)
+        let events: [[String: Any]] = [
+            ["timestamp": at(-300), "type": "session_meta", "payload": ["id": "cx-1", "cwd": cwd, "timestamp": at(-300)]],
+            ["timestamp": at(-299), "type": "event_msg", "payload": ["type": "user_message", "message": "Add a health check endpoint to the API"]],
+            ["timestamp": at(-290), "type": "event_msg", "payload": ["type": "exec_command_end", "exit_code": 0]],
+            ["timestamp": at(-280), "type": "event_msg", "payload": ["type": "patch_apply_end", "changes": [cwd + "/health.go": ["type": "add"]]]],
+            ["timestamp": at(-270), "type": "event_msg", "payload": ["type": "agent_message", "message": "Added /health. Want readiness checks too?"]],
+            ["timestamp": at(-269), "type": "event_msg", "payload": ["type": "request_user_input", "question": "Add readiness checks too?"]],
+        ]
+        try! (events.map(line).joined(separator: "\n") + "\n").write(toFile: codexDir + "/sessions/2026/11/17/rollout-cx-1.jsonl", atomically: true, encoding: .utf8)
+        let codex = CodexReader()
+        codex.update()
+        let ct = codex.tasks.first
+        check(codex.tasks.count == 1 && ct?.agent == .codex, "a Codex rollout becomes one Codex ticket")
+        check(ct?.stats.bashCalls == 1 && ct?.stats.filesTouched == [cwd + "/health.go"], "Codex commands and edits are counted (\(ct?.stats.bashCalls ?? -1), \(ct?.stats.filesTouched ?? []))")
+        check(ct?.pendingAsk == "Add readiness checks too?" && codex.sessions.first?.isLive == true, "a Codex question waits on you")
+        check(ProjectResolver.projectID(for: Paths.home + "/Documents/Codex/2026-09-01/new-chat") == ProjectResolver.scratchID,
+              "Codex chats without a project go to Scratch")
     }
 }

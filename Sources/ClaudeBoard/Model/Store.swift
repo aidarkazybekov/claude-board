@@ -6,6 +6,7 @@ enum SidebarItem: Hashable {
     case inbox, active, backlog, all
     case workspace(String)
     case project(String)
+    case agent(Agent)
 }
 
 enum ViewMode: String, CaseIterable, Identifiable {
@@ -39,7 +40,7 @@ enum SourceFilter: String, CaseIterable, Identifiable {
         switch self {
         case .all: return "Everything"
         case .planned: return "My tasks"
-        case .claude: return "Claude sessions"
+        case .claude: return "Agent work"
         }
     }
     func accepts(_ t: TaskItem) -> Bool {
@@ -64,10 +65,11 @@ enum Period: Int, CaseIterable, Identifiable {
         case .all: return "All time"
         }
     }
+    /// Whole calendar days, today included: "7 days" is today and the six before it, everywhere in the app.
     var since: Date? {
         if self == .all { return nil }
-        if self == .day { return Calendar.current.startOfDay(for: Date()) }
-        return Date().addingTimeInterval(-Double(rawValue) * 86_400)
+        let today = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: .day, value: -(rawValue - 1), to: today)
     }
 }
 
@@ -157,6 +159,7 @@ final class Store {
         isRefreshing = true
         let ingestor = self.ingestor
         ingestor.extraFolders = user.extraFolders ?? []
+        ingestor.disabledAgents = disabledAgents
         ingestor.ignoredFolders = user.ignoredFolders ?? []
         if rediscover { ingestor.forceDiscovery = true }
         queue.async {
@@ -247,6 +250,33 @@ final class Store {
             sess[sid]?.liveStatus = live.status
         }
 
+        // A resumed Claude Code session copies earlier messages (same uuid) into its new transcript.
+        // Keep one ticket per message: the copy in the most recent session, with any number and
+        // edits the older copy had.
+        var byMessage: [String: [String]] = [:]
+        for (id, t) in tasks where t.origin == .prompt && t.agentKind == .claudeCode {
+            let parts = id.split(separator: ":")
+            guard parts.count == 2 else { continue }
+            byMessage[String(parts[1]), default: []].append(id)
+        }
+        var userChanged = false
+        for (_, ids) in byMessage where ids.count > 1 {
+            func seen(_ id: String) -> Date { sess[tasks[id]?.sessionID ?? ""]?.lastActivity ?? tasks[id]?.updatedAt ?? .distantPast }
+            guard let keep = ids.max(by: { (seen($0), $0) < (seen($1), $1) }) else { continue }
+            for id in ids where id != keep {
+                if ingested.numbers[keep] == nil, let n = ingested.numbers[id] {
+                    ingested.numbers[keep] = n
+                    ingested.numberProjects?[keep] = ingested.numberProjects?[id]
+                }
+                if user.overrides[keep] == nil, let o = user.overrides[id] {
+                    user.overrides[keep] = o
+                    userChanged = true
+                }
+                tasks[id] = nil
+            }
+        }
+        if userChanged { saveUser() }
+
         // Re-resolve projects now that repos are known (cwd inside a repo → that repo).
         if !r.repos.isEmpty {
             for (k, t) in tasks where t.cwd != nil {
@@ -329,18 +359,24 @@ final class Store {
         out.reserveCapacity(ingested.tasks.count + user.manual.count + fileTasks.count)
         for var t in ingested.tasks {
             let o = user.overrides[t.id]
-            t.status = o?.status ?? t.inferredStatus
-            t.statusOverridden = o?.status != nil
+            // A status you set holds until the agent does something new on the ticket.
+            if let st = o?.status, (o?.statusSetAt).map({ $0 >= t.lastActivity }) ?? true {
+                t.status = st
+                t.statusOverridden = true
+            } else {
+                t.status = t.inferredStatus
+                t.statusOverridden = false
+            }
             t.priority = o?.priority ?? .none
             if let title = o?.title, !title.isEmpty { t.title = title }
             t.notes = o?.notes ?? ""
             t.labels = o?.labels ?? []
             t.due = o?.due
-            t.hidden = o?.hidden ?? false
+            t.hidden = o?.hidden ?? t.hidden
             if let states = o?.subtaskStates {
                 for k in t.subtasks.indices { if let s = states[t.subtasks[k].id] { t.subtasks[k].state = s } }
             }
-            t.doneAt = t.status == .done ? (o?.statusSetAt ?? t.lastActivity) : nil
+            t.doneAt = t.status == .done ? (t.statusOverridden ? (o?.statusSetAt ?? t.lastActivity) : t.lastActivity) : nil
             out.append(t)
         }
         for var m in user.manual {
@@ -355,6 +391,10 @@ final class Store {
             out.append(f)
         }
 
+        // Work from agents turned off in Settings stays off the board.
+        let off = disabledAgents
+        if !off.isEmpty { out.removeAll { t in t.agentKind.map { off.contains($0) } ?? false } }
+
         // Links between planned tasks and the Claude tickets that worked on them.
         linkPlanned(&out)
 
@@ -362,15 +402,37 @@ final class Store {
         var ids = Set(out.map(\.projectID))
         for (id, s) in user.projectSettings where s.hidden != true && s.pinned == true { ids.insert(id) }
         if UserDefaults.standard.bool(forKey: "showAllRepos") { ids.formUnion(repos) }
+        // Keys are handed out once and kept, so a new project with the same initials never renames
+        // an existing project's tickets. Keys you set in Project Settings always win.
         var infos: [String: ProjectInfo] = [:]
-        var usedKeys: [String: Int] = [:]
+        var saved = ingested.projectKeys ?? [:]
+        var used = Set<String>()
+        var pending: [(String, ProjectInfo)] = []
         for id in ids.sorted() {
-            var info = ProjectResolver.info(for: id, settings: user.projectSettings[id])
-            let base = info.key
-            let n = usedKeys[base, default: 0]
-            usedKeys[base] = n + 1
-            if n > 0 && user.projectSettings[id]?.key == nil { info.key = base + String(n + 1) }
+            let info = ProjectResolver.info(for: id, settings: user.projectSettings[id])
+            if user.projectSettings[id]?.key != nil {
+                used.insert(info.key)
+                infos[id] = info
+            } else {
+                pending.append((id, info))
+            }
+        }
+        for (id, var info) in pending {
+            if let k = saved[id], !used.contains(k) {
+                info.key = k
+            } else {
+                var k = info.key
+                var n = 2
+                while used.contains(k) { k = info.key + String(n); n += 1 }
+                info.key = k
+                saved[id] = k
+            }
+            used.insert(info.key)
             infos[id] = info
+        }
+        if saved != (ingested.projectKeys ?? [:]) {
+            ingested.projectKeys = saved
+            saveIngested()
         }
         projects = infos
         items = out.sorted { $0.lastActivity > $1.lastActivity }
@@ -392,7 +454,8 @@ final class Store {
             var n = [(id as NSString).lastPathComponent.lowercased()]
             if let custom = user.projectSettings[id]?.name { n.append(custom.lowercased()) }
             n.append(contentsOf: (user.projectSettings[id]?.aliases ?? []).map { $0.lowercased() })
-            return n.filter { $0.count >= 2 }
+            // Generic folder names ("app", "core") say nothing about which project a task is for.
+            return n.filter { $0.count >= 2 && !Self.genericNames.contains($0) }
         }
         let texts = [t.projectHint, t.title, t.area].compactMap { $0?.lowercased() }
         for text in texts {
@@ -410,6 +473,9 @@ final class Store {
         if let repo = ProjectRegistry.shared.repo(containing: folder) { return repo }
         return home
     }
+
+    static let genericNames: Set<String> = ["app", "apps", "src", "lib", "libs", "core", "main", "common", "shared", "utils",
+                                            "test", "tests", "docs", "doc", "data", "the", "new", "old", "tmp", "temp", "misc"]
 
     /// Position of `word` in `text` when it stands alone (not part of `my-data-prod` or `database`).
     static func wordPosition(of word: String, in text: String) -> Int? {
@@ -450,13 +516,11 @@ final class Store {
             for m in Self.keyRegex.matches(in: text, range: NSRange(location: 0, length: min(ns.length, 4000))) {
                 let key = ns.substring(with: m.range).uppercased()
                 guard let cands = byKey[key] else { continue }
-                if cands.count == 1 {
-                    target = cands[0]
-                } else {
-                    target = cands.first { c in
-                        let folderParent = out[c].folder.map { ($0 as NSString).deletingLastPathComponent } ?? out[c].projectID
-                        return t.projectID == out[c].projectID || t.projectID.hasPrefix(folderParent)
-                    }
+                // The key must belong to the ticket's own project (or the folder the task file lives in),
+                // so "T-4" in one repo never links to another repo's T-4.
+                target = cands.first { c in
+                    let folderParent = out[c].folder.map { ($0 as NSString).deletingLastPathComponent } ?? out[c].projectID
+                    return t.projectID == out[c].projectID || t.projectID == folderParent || t.projectID.hasPrefix(folderParent + "/")
                 }
                 if target != nil { break }
             }
@@ -465,7 +529,9 @@ final class Store {
             links[target, default: []].append(out[i].id)
             let head = t.prompt.prefix(80).uppercased()
             let key = plannedKey(out[target]).uppercased()
-            if head.hasPrefix("[\(key)]") || head.hasPrefix("WORK ON \(key)") { out[i].hidden = true }
+            if (head.hasPrefix("[\(key)]") || head.hasPrefix("WORK ON \(key)")) && user.overrides[out[i].id]?.hidden != false {
+                out[i].folded = true
+            }
         }
         for (i, ids) in links { out[i].claudeLinks = ids }
     }
@@ -515,6 +581,26 @@ final class Store {
         return (busy, live, needs, linked.count)
     }
 
+    /// The agents that worked on a planned task, most recent first.
+    func agents(on t: TaskItem) -> [Agent] {
+        var out: [Agent] = []
+        for l in linkedClaudeTickets(t) { if let a = l.agentKind, !out.contains(a) { out.append(a) } }
+        return out
+    }
+
+    /// Agents with work on the board, in a fixed order, with open ticket counts and whether one is running.
+    var agentsOnBoard: [(agent: Agent, open: Int, live: Bool)] {
+        var open: [Agent: Int] = [:]
+        var seen = Set<Agent>()
+        for t in items where !t.hidden && user.projectSettings[t.projectID]?.hidden != true {
+            guard let a = t.agentKind else { continue }
+            seen.insert(a)
+            if t.status.isOpen { open[a, default: 0] += 1 }
+        }
+        let running = Set(sessions.values.filter(\.isLive).map(\.agentKind))
+        return Agent.allCases.filter { seen.contains($0) }.map { ($0, open[$0] ?? 0, running.contains($0)) }
+    }
+
     var workspaces: [(name: String, projects: [ProjectInfo])] {
         let visible = projects.values.filter { user.projectSettings[$0.id]?.hidden != true }
         let grouped = Dictionary(grouping: visible, by: \.workspace)
@@ -547,6 +633,7 @@ final class Store {
         case .all: return true
         case .workspace(let w): return project(t.projectID).workspace == w
         case .project(let p): return t.projectID == p
+        case .agent(let a): return t.agentKind == a
         }
     }
 
@@ -555,6 +642,7 @@ final class Store {
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
         return items.filter { t in
             if t.hidden && !showHidden { return false }
+            if t.folded == true && t.status != .needsYou && !showHidden { return false }
             if user.projectSettings[t.projectID]?.hidden == true { return false }
             if !source.accepts(t) { return false }
             if !inScope(t, scope) { return false }
@@ -573,17 +661,28 @@ final class Store {
     /// Scoped tickets inside the selected period. Open tickets always stay visible.
     var periodScoped: [TaskItem] {
         guard let since = period.since else { return scoped }
-        return scoped.filter { $0.status.isOpen || $0.lastActivity >= since }
+        return scoped.filter { $0.status.isOpen || max($0.lastActivity, $0.doneAt ?? .distantPast) >= since }
     }
 
     func count(_ item: SidebarItem) -> Int {
         items.lazy.filter { t in
             guard !t.hidden, self.user.projectSettings[t.projectID]?.hidden != true, self.source.accepts(t) else { return false }
+            if t.folded == true && t.status != .needsYou { return false }
             switch item {
             case .inbox, .active, .backlog: return self.inScope(t, item)
             default: return t.status.isOpen && self.inScope(t, item)
             }
         }.count
+    }
+
+    /// Every ticket you'd see with no filters: not hidden, not in a hidden project.
+    var visibleItems: [TaskItem] {
+        items.filter { !$0.hidden && user.projectSettings[$0.projectID]?.hidden != true }
+    }
+
+    /// Everything waiting on you, whatever the window's filters say (for the menu bar and its badge).
+    var waitingOnYou: [TaskItem] {
+        items.filter { $0.status == .needsYou && !$0.hidden && user.projectSettings[$0.projectID]?.hidden != true }
     }
 
     /// Open tasks you planned for a project (what the sidebar shows next to it).
@@ -592,7 +691,8 @@ final class Store {
     }
 
     var liveSessions: [SessionInfo] {
-        sessions.values.filter(\.isLive).sorted { $0.lastActivity > $1.lastActivity }
+        let off = disabledAgents
+        return sessions.values.filter { $0.isLive && !off.contains($0.agentKind) }.sorted { $0.lastActivity > $1.lastActivity }
     }
 
     func latestTask(inSession sid: String) -> TaskItem? {
@@ -601,12 +701,13 @@ final class Store {
 
     var scopeTitle: String {
         switch scope {
-        case .inbox: return "Needs You"
-        case .active: return "In Progress"
-        case .backlog: return "Backlog"
-        case .all: return "All Projects"
+        case .inbox: return "Needs you"
+        case .active: return "In progress"
+        case .backlog: return "Backlog & to do"
+        case .all: return "All projects"
         case .workspace(let w): return w
         case .project(let p): return project(p).name
+        case .agent(let a): return a.title
         }
     }
 
@@ -796,7 +897,8 @@ final class Store {
             user.overrides[id] = o.isEmpty ? nil : o
             rebuild(); saveUser()
         } else {
-            edit(id, manual: { $0.hidden = hidden }, override: { $0.hidden = hidden ? true : nil })
+            let folded = task(id)?.folded == true
+            edit(id, manual: { $0.hidden = hidden }, override: { $0.hidden = hidden ? true : (folded ? false : nil) })
         }
         if hidden && !showHidden && selection == id { selection = nil }
     }
@@ -983,7 +1085,36 @@ final class Store {
 
     // MARK: - Actions
 
-    func startWithClaude(_ id: String) {
+    /// Agents turned off in Settings: their work stays off the board and isn't read.
+    var disabledAgents: Set<Agent> {
+        Set((UserDefaults.standard.stringArray(forKey: "disabledAgents") ?? []).compactMap(Agent.init(rawValue:)))
+    }
+
+    func setAgent(_ agent: Agent, enabled: Bool) {
+        var d = disabledAgents
+        if enabled { d.remove(agent) } else { d.insert(agent) }
+        UserDefaults.standard.set(d.map(\.rawValue).sorted(), forKey: "disabledAgents")
+        rebuild()
+        refresh()
+    }
+
+    /// Sessions and requests per agent, for Settings and the first-launch summary.
+    func agentStats(_ agent: Agent) -> (sessions: Int, requests: Int, projects: Int, last: Date?) {
+        let s = ingested.sessions.filter { $0.agentKind == agent }
+        let t = ingested.tasks.filter { $0.agentKind == agent && $0.origin != .suggested }
+        return (s.count, t.count, Set(t.map(\.projectID)).count, s.map(\.lastActivity).max())
+    }
+
+    /// The agent New Task and "Start with" use unless you pick another: the last one you started.
+    var defaultAgent: Agent {
+        get { Agent(rawValue: UserDefaults.standard.string(forKey: "defaultAgent") ?? "") ?? .claudeCode }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "defaultAgent") }
+    }
+
+    func startWithClaude(_ id: String) { start(id, with: .claudeCode) }
+
+    /// Hands a task to an agent: opens it in the project folder with the task as its first message.
+    func start(_ id: String, with agent: Agent) {
         guard let t = task(id) else { return }
         let dir: String = {
             if t.projectID.hasPrefix("/"), FileManager.default.fileExists(atPath: t.projectID) { return t.projectID }
@@ -1002,14 +1133,16 @@ final class Store {
             let open = t.subtasks.filter { $0.state != .completed }.map { "- " + $0.title }
             if !open.isEmpty { prompt += "\n\nChecklist:\n" + open.joined(separator: "\n") }
         }
-        Launcher.startClaude(in: dir, prompt: prompt)
+        defaultAgent = agent
+        Launcher.start(agent, in: dir, prompt: prompt)
         if t.origin.isPlanned && t.status != .inProgress { setStatus(id, .inProgress) }
     }
 
     func resume(_ id: String) {
         guard let t = task(id), let sid = t.sessionID else { return }
-        let dir = sessions[sid]?.cwd ?? t.cwd ?? Roots.primary
-        Launcher.resumeClaude(sessionID: sid, in: dir)
+        let s = sessions[sid]
+        let dir = s?.cwd.nonEmpty ?? t.cwd ?? Roots.primary
+        Launcher.resume(agent: s?.agentKind ?? t.agentKind ?? .claudeCode, sessionID: sid, in: dir)
     }
 
     /// Brings the main window forward on a ticket (or on Needs You), e.g. from a notification.
@@ -1083,4 +1216,8 @@ final class Store {
 
 extension Double {
     var nonZero: Double? { self == 0 ? nil : self }
+}
+
+extension String {
+    var nonEmpty: String? { isEmpty ? nil : self }
 }

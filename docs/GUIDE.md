@@ -4,6 +4,12 @@ A walkthrough of everything ClaudeBoard does. The screenshots come from the buil
 so you can follow along without touching your own data: **Help → Try the Demo Board**, or
 `ClaudeBoard --demo`.
 
+**Works with more than Claude.** ClaudeBoard reads the history of **Claude Code** and **Codex** (the
+CLI and the desktop app) and puts both on the same board, each ticket marked with the agent that did
+the work. **Cursor**, **Gemini CLI** and **Antigravity** are detected and can be started on a task
+from the board; reading their chats comes next. Turn any agent off in **Settings → Agents on this
+Mac**. Where this guide says "Claude", the same goes for Codex.
+
 - [1. Install and first launch](#1-install-and-first-launch)
 - [2. Two kinds of tickets](#2-two-kinds-of-tickets)
 - [3. The board](#3-the-board)
@@ -38,9 +44,9 @@ reads Claude Code's local logs; there is nothing to configure in Claude itself.
 
 ## 2. Two kinds of tickets
 
-| | Claude's work | Your tasks |
+| | Your agents' work | Your tasks |
 |---|---|---|
-| Comes from | Every request you type in Claude Code | You: Plan view, board quick-add, ⌘N |
+| Comes from | Every request you type in Claude Code or Codex | You: Plan view, board quick-add, ⌘N |
 | Key | Per project, e.g. `WEB-12` | Backlog file id (`T-004`), or per project (`RB-1`) |
 | Moves by itself | Yes: follows the session | No: you decide when it's done |
 | Shows | Claude's plan, outcome, files touched, active time | Description, checklist, and Claude's work on it |
@@ -52,20 +58,21 @@ counted as new tickets.
 
 ![Board](media/board.png)
 
-| Column | A Claude ticket lands here when… |
+| Column | An agent's ticket lands here when… |
 |---|---|
-| **Backlog** | Claude suggested it as a follow-up (yours: you put it there) |
-| **To Do** | You asked, but the session closed before Claude answered |
-| **In Progress** | Claude is working right now, or its plan still has open steps |
-| **Needs You** | Claude finished its turn with a question, or the session is blocked |
-| **Done** | Claude finished and you moved on |
+| **Backlog** | The agent suggested it as a follow-up (yours: you put it there) |
+| **To do** | You asked, but the session closed before the agent answered |
+| **In progress** | The agent is working right now, or the session is open and its plan still has open steps |
+| **Needs you** | The agent stopped with a question or a permission request in the last day, or the session is still open and waiting |
+| **Done** | The agent finished and you moved on |
 
 - **Moving cards:** drag a card to another column. A small hand icon marks columns you set
-  yourself. **Use status from Claude** in the card's menu undoes it.
-- **Live sessions:** a green dot means the session is open; a pulsing dot means Claude is busy.
-- **Scope:** the sidebar picks what you see: everything, a workspace, or one project.
-- **Period:** the toolbar filter hides Done tickets older than the chosen period. Open tickets
-  always show.
+  yourself; your column holds until the agent does something new on that ticket.
+  **Use status from the agent** in the card's menu undoes it.
+- **Live sessions:** a green dot means the session is open; a pulsing dot means the agent is busy.
+- **Scope:** the sidebar picks what you see: everything, a workspace, one project, or one agent.
+- **Period:** the filter above the board hides Done tickets older than the chosen period, counted in
+  whole days ("7 days" is today and the six before). Open tickets always show.
 
 ## 4. When Claude is waiting on you
 
@@ -115,9 +122,13 @@ Where a task is saved:
 
 - **Mention the key:** "work on T-004", "[RB-1] add Spanish recipes". The session links to the
   task, and the task's details list Claude's work on it with live status.
-- **Start with Claude:** opens Terminal in the project folder and runs Claude Code with the
-  task, key included. A backlog-file task is passed as "Work on T-004… read
+- **Start with (any agent):** the button remembers the agent you used last; the arrow next to it
+  picks another. Claude Code, Codex and Gemini CLI open in Terminal in the project folder with the
+  task, key included. Cursor and Antigravity open the project, with the task on your clipboard. A backlog-file task is passed as "Work on T-004… read
   `backlog/tasks/T-004-….md` first", and Claude is asked to update its status when done.
+- **Started from the task, shown through it.** A session started with "[T-004] …" doesn't get a
+  separate card; it shows inside T-004. If it stops to ask you something, it still shows in
+  **Needs you**, the menu bar and notifications.
 - **Your task's status stays yours.** When Claude finishes, check the outcome and mark the task
   done.
 

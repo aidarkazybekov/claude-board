@@ -29,6 +29,12 @@ final class TranscriptParser {
     private var nextNativeID = 1
     private var claudeAsked = false
     private var lastEventAt: Date?
+    /// The AskUserQuestion / ExitPlanMode call waiting for its result, and the ticket it belongs to.
+    private var askToolID: String?
+    private var askOwner: Int?
+    /// start_session calls waiting for the task id in their result, and the suggestion each made.
+    private var suggestCalls: [String: Int] = [:]
+    private var suggestTaskIDs: [String: Int] = [:]
 
     private let iso: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -53,7 +59,7 @@ final class TranscriptParser {
         customTitle = nil; aiTitle = nil; cwd = nil; branch = nil; firstAt = nil; lastAt = nil
         entrypoint = nil; promptCount = 0
         tasks = []; suggestions = []; planOwner = nil; nativeOwner = [:]; nextNativeID = 1; claudeAsked = false
-        lastEventAt = nil
+        lastEventAt = nil; askToolID = nil; askOwner = nil; suggestCalls = [:]; suggestTaskIDs = [:]
     }
 
     /// Reads new bytes. Returns true when anything changed.
@@ -106,8 +112,22 @@ final class TranscriptParser {
         let isTitle = contains(p, n, Self.kCustomTitle) || contains(p, n, Self.kAITitle)
         guard isUser || isAssistant || isTitle else { return }
         if contains(p, n, Self.kSidechain) { return }
-        // Tool results are the bulk of transcript bytes and never carry a request.
-        if isUser && !isAssistant && !isTitle && contains(p, n, Self.kToolResult) { return }
+        // Tool results are the bulk of transcript bytes and never carry a request. Only two matter:
+        // the answer to a question or plan approval, and the task id a suggestion got.
+        if isUser && !isAssistant && !isTitle && contains(p, n, Self.kToolResult) {
+            if let id = askToolID, contains(p, n, Array(id.utf8)) {
+                if let o = askOwner, tasks.indices.contains(o) { tasks[o].pendingAsk = nil }
+                askToolID = nil
+                askOwner = nil
+                claudeAsked = false
+            }
+            for (id, idx) in suggestCalls where contains(p, n, Array(id.utf8)) {
+                suggestCalls[id] = nil
+                let text = String(decoding: UnsafeRawBufferPointer(start: p, count: n), as: UTF8.self)
+                if let r = text.range(of: #"task_[A-Za-z0-9]+"#, options: .regularExpression) { suggestTaskIDs[String(text[r])] = idx }
+            }
+            return
+        }
 
         let data = Data(bytesNoCopy: UnsafeMutableRawPointer(mutating: p), count: n, deallocator: .none)
         guard let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
@@ -167,14 +187,15 @@ final class TranscriptParser {
 
         let ts = date(obj) ?? lastAt ?? Date()
         touchSession(obj, ts)
-        guard var text = PromptText.clean(raw) else { return }
-        if images > 0 { text += images == 1 ? "\n[1 image attached]" : "\n[\(images) images attached]" }
+        guard let text = PromptText.clean(raw) else { return }
+        let imageNote = images == 0 ? "" : images == 1 ? "\n[1 image attached]" : "\n[\(images) images attached]"
         promptCount += 1
         lastEventAt = ts
 
         let hasCurrent = !tasks.isEmpty
+        // The follow-up check looks at what was typed; a screenshot alone doesn't make a reply a new request.
         if hasCurrent && (PromptText.isFollowUp(text, claudeAsked: claudeAsked) || PromptText.isTrivial(text)) {
-            tasks[tasks.count - 1].followUps.append(Exchange(at: ts, text: text))
+            tasks[tasks.count - 1].followUps.append(Exchange(at: ts, text: text + imageNote))
             tasks[tasks.count - 1].updatedAt = ts
             tasks[tasks.count - 1].pendingAsk = nil
             claudeAsked = false
@@ -190,7 +211,7 @@ final class TranscriptParser {
             projectID: projectID,
             sessionID: sessionID,
             title: PromptText.title(from: text),
-            prompt: text,
+            prompt: text + imageNote,
             createdAt: ts,
             updatedAt: ts,
             inferredStatus: .todo,
@@ -230,14 +251,14 @@ final class TranscriptParser {
             case "tool_use":
                 let name = (part["name"] as? String) ?? ""
                 let input = (part["input"] as? [String: Any]) ?? [:]
-                handleTool(name, input, taskIndex: i, ts: ts)
+                handleTool(name, input, taskIndex: i, ts: ts, id: part["id"] as? String)
             default:
                 break
             }
         }
     }
 
-    private func handleTool(_ name: String, _ input: [String: Any], taskIndex i: Int, ts: Date?) {
+    private func handleTool(_ name: String, _ input: [String: Any], taskIndex i: Int, ts: Date?, id toolID: String? = nil) {
         tasks[i].stats.toolCalls += 1
         switch name {
         case "Bash":
@@ -306,10 +327,20 @@ final class TranscriptParser {
                 tasks[i].pendingAsk = q
             }
             claudeAsked = true
+            askToolID = toolID
+            askOwner = i
 
         case "ExitPlanMode":
             tasks[i].pendingAsk = "Approve the plan"
             claudeAsked = true
+            askToolID = toolID
+            askOwner = i
+
+        case "mcp__ccd_session__dismiss_task":
+            // A suggestion withdrawn later in the session leaves the backlog.
+            if let tid = input["task_id"] as? String, let idx = suggestTaskIDs[tid], suggestions.indices.contains(idx) {
+                suggestions[idx].hidden = true
+            }
 
         case "mcp__ccd_session__start_session":
             guard (input["initiation"] as? String) == "own_initiative",
@@ -324,6 +355,7 @@ final class TranscriptParser {
                 createdAt: at, updatedAt: at, inferredStatus: .backlog, cwd: tasks[i].cwd, branch: tasks[i].branch
             )
             s.recap = "Proposed while working on: \(tasks[i].title)"
+            if let toolID { suggestCalls[toolID] = suggestions.count }
             suggestions.append(s)
 
         default:

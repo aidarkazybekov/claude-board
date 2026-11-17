@@ -1,40 +1,58 @@
 import SwiftUI
 
 enum Palette {
-    static let projectColors: [Color] = [
-        Color(red: 0.25, green: 0.47, blue: 0.95),  // blue
-        Color(red: 0.58, green: 0.36, blue: 0.90),  // violet
-        Color(red: 0.90, green: 0.33, blue: 0.55),  // pink
-        Color(red: 0.95, green: 0.55, blue: 0.20),  // orange
-        Color(red: 0.13, green: 0.64, blue: 0.64),  // teal
-        Color(red: 0.30, green: 0.66, blue: 0.33),  // green
-        Color(red: 0.36, green: 0.40, blue: 0.85),  // indigo
-        Color(red: 0.75, green: 0.55, blue: 0.20),  // amber
-        Color(red: 0.55, green: 0.45, blue: 0.38),  // brown
-        Color(red: 0.20, green: 0.62, blue: 0.85),  // cyan
-    ]
+    /// Ten project colors, in the order projects have always been assigned them.
+    static let projectBase: [UInt32] = [0x3D6FE0, 0x7A5AE0, 0xC2417A, 0xC8641A, 0x1F9A80, 0x6E8B1A, 0x4F57C9, 0x9A7B12, 0x8C6A4A, 0x2B8FD6]
+    static let projectNames = ["Blue", "Violet", "Pink", "Orange", "Teal", "Olive", "Indigo", "Gold", "Brown", "Sky"]
 
-    static let projectHex = ["#4078F2", "#945CE6", "#E6548C", "#F28C33", "#21A3A3", "#4DA854", "#5C66D9", "#BF8C33", "#8C7361", "#339ED9"]
+    static let projectColors: [Color] = projectBase.map { Color.dyn($0, Hex.mix($0, 0xFFFFFF, 0.25)) }
+    static let projectHex = projectBase.map(Hex.css)
 
-    static func project(_ i: Int) -> Color { projectColors[((i % projectColors.count) + projectColors.count) % projectColors.count] }
+    private static func base(_ i: Int) -> UInt32 { projectBase[((i % projectBase.count) + projectBase.count) % projectBase.count] }
+
+    static func project(_ i: Int) -> Color { Color.dyn(base(i), Hex.mix(base(i), 0xFFFFFF, 0.25)) }
+    /// Soft background for a project's cards and rows.
+    static func tint(_ i: Int) -> Color { Color.dyn(Hex.mix(base(i), 0xFFFFFF, 0.89), Hex.mix(base(i), Studio.surfaceHex.1, 0.80)) }
+    /// Readable text on that tint.
+    static func ink(_ i: Int) -> Color { Color.dyn(Hex.mix(base(i), 0x000000, 0.25), Hex.mix(base(i), 0xFFFFFF, 0.45)) }
 
     static func status(_ s: TaskStatus) -> Color {
         switch s {
-        case .backlog: return Color(nsColor: .tertiaryLabelColor)
-        case .todo: return Color(red: 0.45, green: 0.50, blue: 0.60)
-        case .inProgress: return Color(red: 0.22, green: 0.50, blue: 0.96)
-        case .needsYou: return Color(red: 0.96, green: 0.55, blue: 0.12)
-        case .done: return Color(red: 0.24, green: 0.66, blue: 0.36)
+        case .backlog: return Color.dyn(0x9AA0B2, 0x6E7386)
+        case .todo: return Studio.ink2
+        case .inProgress: return Studio.blue
+        case .needsYou: return Studio.coral
+        case .done: return Color.dyn(0x1F9A80, 0x3DD3A0)
+        }
+    }
+
+    static func statusFill(_ s: TaskStatus) -> Color {
+        switch s {
+        case .backlog: return Studio.well
+        case .todo: return Color.dyn(0xEEF0F5, 0x2A2D37)
+        case .inProgress: return Studio.blueBg
+        case .needsYou: return Studio.coralBg
+        case .done: return Studio.doneBg
+        }
+    }
+
+    static func statusInk(_ s: TaskStatus) -> Color {
+        switch s {
+        case .backlog: return Studio.muted
+        case .todo: return Studio.ink2
+        case .inProgress: return Studio.blueInk
+        case .needsYou: return Studio.coralInk
+        case .done: return Studio.doneInk
         }
     }
 
     static func priority(_ p: Priority) -> Color {
         switch p {
-        case .none: return .secondary
-        case .low: return Color(red: 0.45, green: 0.55, blue: 0.70)
-        case .medium: return Color(red: 0.85, green: 0.65, blue: 0.10)
-        case .high: return Color(red: 0.95, green: 0.45, blue: 0.15)
-        case .urgent: return Color(red: 0.90, green: 0.20, blue: 0.20)
+        case .none: return Studio.muted
+        case .low: return Studio.muted
+        case .medium: return Studio.ink2
+        case .high: return Color.dyn(0xC25E12, 0xF29A5C)
+        case .urgent: return Color.dyn(0xD92D20, 0xFF7A70)
         }
     }
 }
@@ -44,16 +62,16 @@ struct ProjectChip: View {
     var showWorkspace = false
 
     var body: some View {
-        HStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 2).fill(Palette.project(info.colorIndex)).frame(width: 7, height: 7)
+        HStack(spacing: 5) {
+            ProjectDot(colorIndex: info.colorIndex, size: 8)
             Text(showWorkspace && info.workspace != info.name && info.workspace != "Other" ? "\(info.workspace) / \(info.name)" : info.name)
                 .lineLimit(1)
         }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 6)
+        .font(Studio.text(12, .bold))
+        .foregroundStyle(Palette.ink(info.colorIndex))
+        .padding(.horizontal, 9)
         .padding(.vertical, 2)
-        .background(Palette.project(info.colorIndex).opacity(0.12), in: Capsule())
+        .background(Capsule().fill(Palette.tint(info.colorIndex)))
     }
 }
 
@@ -63,17 +81,16 @@ struct StatusBadge: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: status.symbol)
             Text(status.title)
             if overridden {
                 Image(systemName: "hand.point.up.left.fill").font(.system(size: 8)).help("Set by you")
             }
         }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(Palette.status(status))
-        .padding(.horizontal, 7)
+        .font(Studio.text(12, .bold))
+        .foregroundStyle(Palette.statusInk(status))
+        .padding(.horizontal, 10)
         .padding(.vertical, 2)
-        .background(Palette.status(status).opacity(0.13), in: Capsule())
+        .background(Capsule().fill(Palette.statusFill(status)))
     }
 }
 
@@ -98,8 +115,8 @@ struct LiveDot: View {
     var body: some View {
         PulseDot(busy: busy)
             .frame(width: 7, height: 7)
-            .help(busy ? "Claude is working in this session now" : "Session open, idle")
-            .accessibilityLabel(busy ? "Claude is working" : "Session open")
+            .help(busy ? "The agent is working in this session now" : "Session open, idle")
+            .accessibilityLabel(busy ? "Agent is working" : "Session open")
     }
 }
 
@@ -134,7 +151,7 @@ final class PulseDotView: NSView {
     }
 
     private func refresh() {
-        let green = NSColor.systemGreen
+        let green = NSColor(name: nil) { $0.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(hex: 0x3DD3A0) : NSColor(hex: 0x1FA37A) }
         dot.fillColor = (busy ? green : green.withAlphaComponent(0.45)).cgColor
         ring.fillColor = nil
         ring.strokeColor = green.withAlphaComponent(0.6).cgColor
@@ -176,9 +193,9 @@ struct OriginIcon: View {
         switch origin {
         case .manual: Image(systemName: "person.crop.circle").help("Your task, saved on this Mac")
         case .file: Image(systemName: "doc.text").help("Your task, saved as a file in a backlog folder")
-        case .suggested: Image(systemName: "lightbulb").help("Follow-up Claude suggested")
+        case .suggested: Image(systemName: "lightbulb").help("Follow-up an agent suggested")
         case .history: Image(systemName: "clock.arrow.circlepath").help("Recovered from prompt history (transcript cleaned up)")
-        case .prompt: Image(systemName: "sparkle").help("Request you gave Claude")
+        case .prompt: Image(systemName: "sparkle").help("Request you gave an agent")
         }
     }
 }

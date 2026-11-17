@@ -10,9 +10,9 @@ enum TaskStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .backlog: return "Backlog"
-        case .todo: return "To Do"
-        case .inProgress: return "In Progress"
-        case .needsYou: return "Needs You"
+        case .todo: return "To do"
+        case .inProgress: return "In progress"
+        case .needsYou: return "Needs you"
         case .done: return "Done"
         }
     }
@@ -82,6 +82,40 @@ enum TaskOrigin: String, Codable, Hashable {
 
     /// Tasks you planned yourself, as opposed to work Claude logged.
     var isPlanned: Bool { self == .manual || self == .file }
+}
+
+/// The coding agent that did a piece of work. Planned tasks have none until an agent picks them up.
+enum Agent: String, Codable, CaseIterable, Identifiable, Hashable {
+    case claudeCode, codex, cursor, gemini, antigravity
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .claudeCode: return "Claude Code"
+        case .codex: return "Codex"
+        case .cursor: return "Cursor"
+        case .gemini: return "Gemini CLI"
+        case .antigravity: return "Antigravity"
+        }
+    }
+
+    /// Two letters for the round avatar.
+    var mono: String {
+        switch self {
+        case .claudeCode: return "CC"
+        case .codex: return "CX"
+        case .cursor: return "CU"
+        case .gemini: return "GM"
+        case .antigravity: return "AG"
+        }
+    }
+
+    /// Agents that run in a terminal can be resumed and started from a Terminal tab;
+    /// editor agents open the project in their app.
+    var runsInTerminal: Bool { self == .claudeCode || self == .codex || self == .gemini }
+
+    var home: String { runsInTerminal ? "Terminal" : "Editor" }
 }
 
 enum SubtaskState: String, Codable, Hashable {
@@ -159,12 +193,31 @@ struct TaskItem: Codable, Identifiable, Hashable {
     var claudeLinks: [String]?
     /// For Claude tickets: the planned task they belong to.
     var plannedLink: String?
+    /// Which agent did this work; nil on older data means Claude Code.
+    var agent: Agent?
+    /// Started from a planned task ("[T-004] …"): shown through that task instead of on its own,
+    /// except when it needs you.
+    var folded: Bool?
+
+    /// The agent behind an agent ticket; nil for your own planned tasks.
+    var agentKind: Agent? { origin.isPlanned ? nil : (agent ?? .claudeCode) }
 
     var subtaskProgress: (done: Int, total: Int) {
         (subtasks.filter { $0.state == .completed }.count, subtasks.count)
     }
 
     var lastActivity: Date { max(updatedAt, stats.endedAt ?? updatedAt) }
+
+    /// Where this ticket came from, in words ("Codex session", "Your task · backlog file").
+    var originTitle: String {
+        let name = (agentKind ?? .claudeCode).title
+        switch origin {
+        case .prompt: return "\(name) session"
+        case .history: return "\(name) prompt history"
+        case .suggested: return "Suggested by \(name)"
+        case .manual, .file: return origin.title
+        }
+    }
 }
 
 /// User edits layered on top of an imported ticket.
@@ -204,8 +257,11 @@ struct SessionInfo: Codable, Identifiable, Hashable {
     var needsAction: String?
     var promptCount = 0
     var entrypoint: String?
+    /// nil on older data means Claude Code.
+    var agent: Agent?
 
     var isBusy: Bool { isLive && liveStatus == "busy" }
+    var agentKind: Agent { agent ?? .claudeCode }
 }
 
 struct ProjectInfo: Identifiable, Hashable {
@@ -246,6 +302,8 @@ struct IngestedStore: Codable {
     var counters: [String: Int] = [:]
     /// Project each number was issued in; a ticket that moves project gets a new number there.
     var numberProjects: [String: String]?
+    /// Ticket key prefix given to each project, so keys never change when a similar project appears.
+    var projectKeys: [String: String]?
 }
 
 struct UserStore: Codable {
