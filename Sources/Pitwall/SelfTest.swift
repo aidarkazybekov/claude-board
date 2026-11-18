@@ -427,6 +427,11 @@ enum SelfTest {
         Rename.copyData(from: old, to: new)
         check((try? String(contentsOf: new.appendingPathComponent("user.json"), encoding: .utf8)) == "{\"items\":[1]}",
               "an existing Pitwall folder is never overwritten")
+        let started = tmp.appendingPathComponent("rename/Started")
+        try? fm.createDirectory(at: started.appendingPathComponent("cache"), withIntermediateDirectories: true)
+        Rename.copyData(from: old, to: started)
+        check(fm.fileExists(atPath: started.appendingPathComponent("user.json").path),
+              "a Pitwall folder holding only a cache still gets the old files")
         let suite = "pitwall-selftest-\(UUID().uuidString.prefix(6))"
         let d = UserDefaults(suiteName: suite)!
         d.set(false, forKey: "showInDock")

@@ -28,14 +28,16 @@ enum Rename {
         defaults.set(true, forKey: doneKey)
     }
 
-    /// Copies everything but the cache (it's rebuilt from the agents' own files). Leaves an existing
-    /// Pitwall folder alone.
+    /// Copies everything but the cache (it's rebuilt from the agents' own files). A file Pitwall
+    /// already has is never replaced, but one it's missing is copied even if the folder exists.
     static func copyData(from old: URL, to new: URL) {
         let fm = FileManager.default
-        guard fm.fileExists(atPath: old.path), !fm.fileExists(atPath: new.path) else { return }
+        guard fm.fileExists(atPath: old.path) else { return }
         try? fm.createDirectory(at: new, withIntermediateDirectories: true)
         for name in (try? fm.contentsOfDirectory(atPath: old.path)) ?? [] where name != "cache" {
-            try? fm.copyItem(at: old.appendingPathComponent(name), to: new.appendingPathComponent(name))
+            let dest = new.appendingPathComponent(name)
+            guard !fm.fileExists(atPath: dest.path) else { continue }
+            try? fm.copyItem(at: old.appendingPathComponent(name), to: dest)
         }
     }
 
