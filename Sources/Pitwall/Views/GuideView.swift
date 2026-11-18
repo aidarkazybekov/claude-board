@@ -180,7 +180,10 @@ struct GuideIllustration: View {
                 miniCard(project: "web", key: "T-004", title: "Checkout: one column on mobile", color: 0, chip: .claudeCode, ask: nil, working: true)
             case .stayOnTop:
                 HStack(spacing: 6) {
-                    Image(systemName: "checklist")
+                    Image(nsImage: PitLights.menuBarImage(alert: true))
+                        .renderingMode(.template)
+                        .resizable()
+                        .frame(width: 12, height: 19)
                     Text("3")
                 }
                 .font(Studio.display(18))

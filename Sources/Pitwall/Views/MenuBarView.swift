@@ -194,7 +194,7 @@ struct MenuBarLabel: View {
     var body: some View {
         let n = store.waitingOnYou.count
         HStack(spacing: 3) {
-            Image(systemName: n > 0 ? "checklist.unchecked" : "checklist")
+            Image(nsImage: PitLights.menuBarImage(alert: n > 0))
             if n > 0 { Text("\(n)") }
         }
         // The label is alive even with every window closed, so it reopens the board for notification clicks.
