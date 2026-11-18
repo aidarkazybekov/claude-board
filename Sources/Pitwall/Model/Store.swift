@@ -113,7 +113,7 @@ final class Store {
     var showDiscovery = false
     /// Bumped to ask the always-alive menu bar label to open the main window (e.g. a notification click).
     var openMainRequest = 0
-    /// nil until the user has been asked; then whether macOS allows ClaudeBoard's notifications.
+    /// nil until the user has been asked; then whether macOS allows Pitwall's notifications.
     var notificationsAllowed: Bool?
     /// Statuses are compared from the second merge on, so launch never triggers notifications.
     private var hasMerged = false
@@ -125,7 +125,7 @@ final class Store {
     private(set) var loadError: String?
 
     @ObservationIgnored private let ingestor = Ingestor()
-    @ObservationIgnored private let queue = DispatchQueue(label: "claudeboard.ingest", qos: .utility)
+    @ObservationIgnored private let queue = DispatchQueue(label: "pitwall.ingest", qos: .utility)
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var saveUserWork: DispatchWorkItem?
     @ObservationIgnored private var localWrites: [String: Date] = [:]
@@ -135,7 +135,7 @@ final class Store {
         load()
         rebuild()
         if Demo.isOn { Demo.seed(self) }
-        if !UserDefaults.standard.bool(forKey: "onboarded") && ProcessInfo.processInfo.environment["CLAUDEBOARD_DATA_DIR"] == nil
+        if !UserDefaults.standard.bool(forKey: "onboarded") && ProcessInfo.processInfo.environment["PITWALL_DATA_DIR"] == nil
             && !CommandLine.arguments.contains("--snapshot")
         {
             showOnboarding = true
@@ -337,9 +337,9 @@ final class Store {
         Self.debugLog("merge: planned=\(r.plannedTasks.count) fileTasks=\(fileTasks.count) items=\(items.count) folders=\(taskFolders.count) changed=\(r.dataChanged) took=\(String(format: "%.2f", r.duration))s")
     }
 
-    /// Diagnostics, only when CLAUDEBOARD_LOG points at a file.
+    /// Diagnostics, only when PITWALL_LOG points at a file.
     nonisolated static func debugLog(_ line: String) {
-        guard let path = ProcessInfo.processInfo.environment["CLAUDEBOARD_LOG"] else { return }
+        guard let path = ProcessInfo.processInfo.environment["PITWALL_LOG"] else { return }
         let stamp = ISO8601DateFormatter().string(from: Date())
         let data = Data("\(stamp) \(line)\n".utf8)
         if let h = FileHandle(forWritingAtPath: path) { h.seekToEndOfFile(); h.write(data); try? h.close() }
@@ -499,7 +499,7 @@ final class Store {
     private static let keyRegex = try! NSRegularExpression(pattern: #"\b[A-Za-z][A-Za-z0-9]{0,9}-\d{1,5}\b"#)
 
     /// Connects Claude tickets to planned tasks whose key they mention ("do T-015", "[HR-3] …").
-    /// A ticket whose prompt starts with the key was launched from ClaudeBoard and is folded
+    /// A ticket whose prompt starts with the key was launched from Pitwall and is folded
     /// into the planned task instead of showing twice.
     private func linkPlanned(_ out: inout [TaskItem]) {
         var byKey: [String: [Int]] = [:]

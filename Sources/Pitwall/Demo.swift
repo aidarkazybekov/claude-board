@@ -1,29 +1,29 @@
 import Foundation
 
-/// `ClaudeBoard --demo` runs the app on generated sample data: a fictional company ("Acme") with
+/// `Pitwall --demo` runs the app on generated sample data: a fictional company ("Acme") with
 /// a few apps, Claude Code sessions in various states, and a shared backlog folder. Everything
-/// lives in a temp folder; the real `~/.claude`, settings and ClaudeBoard data are never touched.
+/// lives in a temp folder; the real `~/.claude`, settings and Pitwall data are never touched.
 enum Demo {
-    static var isOn: Bool { ProcessInfo.processInfo.environment["CLAUDEBOARD_DEMO"] == "1" }
+    static var isOn: Bool { ProcessInfo.processInfo.environment["PITWALL_DEMO"] == "1" }
 
     static var base: URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("ClaudeBoard-Demo", isDirectory: true)
+        FileManager.default.temporaryDirectory.appendingPathComponent("Pitwall-Demo", isDirectory: true)
     }
 
     /// Points every data path at a fresh demo folder and fills it. Call before the app starts.
     static func prepare() {
         let b = base.path
         try? FileManager.default.removeItem(atPath: b)
-        setenv("CLAUDEBOARD_DEMO", "1", 1)
-        setenv("CLAUDEBOARD_DATA_DIR", b + "/data", 1)
-        setenv("CLAUDEBOARD_CLAUDE_DIR", b + "/claude", 1)
-        setenv("CLAUDEBOARD_DESKTOP_DIR", b + "/desktop", 1)
-        setenv("CLAUDEBOARD_ROOTS", b + "/Projects", 1)
+        setenv("PITWALL_DEMO", "1", 1)
+        setenv("PITWALL_DATA_DIR", b + "/data", 1)
+        setenv("PITWALL_CLAUDE_DIR", b + "/claude", 1)
+        setenv("PITWALL_DESKTOP_DIR", b + "/desktop", 1)
+        setenv("PITWALL_ROOTS", b + "/Projects", 1)
         // Other agents read demo folders too, so the demo never shows real data.
-        setenv("CLAUDEBOARD_CODEX_DIR", b + "/codex", 1)
-        setenv("CLAUDEBOARD_CURSOR_DIR", b + "/cursor", 1)
-        setenv("CLAUDEBOARD_GEMINI_DIR", b + "/gemini", 1)
-        setenv("CLAUDEBOARD_ANTIGRAVITY_DIR", b + "/antigravity", 1)
+        setenv("PITWALL_CODEX_DIR", b + "/codex", 1)
+        setenv("PITWALL_CURSOR_DIR", b + "/cursor", 1)
+        setenv("PITWALL_GEMINI_DIR", b + "/gemini", 1)
+        setenv("PITWALL_ANTIGRAVITY_DIR", b + "/antigravity", 1)
         DemoData(base: b).write()
     }
 
@@ -32,6 +32,11 @@ enum Demo {
     static func seed(_ store: Store) {
         guard isOn else { return }
         let projects = base.path + "/Projects"
+        // Fixed colours, so the demo (and every screenshot made from it) looks the same wherever it runs.
+        for (i, repo) in ["acme/apps/web", "acme/apps/api", "acme/apps/billing", "acme/infra", "acme/apps/mobile",
+                          "recipe-bot", "portfolio", "acme"].enumerated() {
+            store.updateProject(projects + "/" + repo) { $0.colorIndex = i }
+        }
         let bot = projects + "/recipe-bot"
         let site = projects + "/portfolio"
         store.createTask(title: "Add Spanish recipes to the catalogue", projectID: bot, notes: "Start with 30 dishes. Keep the same JSON schema.",
@@ -68,6 +73,132 @@ struct DemoData {
         writeBacklog()
         writeSessions()
         writeCodex()
+        writeCursor()
+        writeGemini()
+        writeAntigravity()
+    }
+
+    // MARK: Cursor (its global state database, as Cursor keeps it)
+
+    private func writeCursor() {
+        let fm = FileManager.default
+        let dir = base + "/cursor/User/globalStorage"
+        try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        let path = dir + "/state.vscdb"
+        try? fm.removeItem(atPath: path)
+        guard let db = SQLiteWriter(path: path) else { return }
+        db.exec("CREATE TABLE cursorDiskKV (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)")
+        db.exec("CREATE TABLE composerHeaders (composerId TEXT PRIMARY KEY, workspaceId TEXT, createdAt INTEGER, lastUpdatedAt INTEGER, isArchived INTEGER, isSubagent INTEGER, recency INTEGER, checkpointAt INTEGER, value TEXT)")
+        func ms(_ d: Date) -> Int { Int(d.timeIntervalSince1970 * 1000) }
+        func chat(_ id: String, cwd: String, name: String, busy: Bool, todos: [(String, String)], _ bubbles: [(Date, [String: Any])]) {
+            var heads: [[String: Any]] = []
+            for (i, (at, b)) in bubbles.enumerated() {
+                var bubble = b
+                let bid = "\(id)-b\(i)"
+                bubble["bubbleId"] = bid
+                bubble["createdAt"] = iso.string(from: at)
+                heads.append(["bubbleId": bid, "type": bubble["type"] ?? 2])
+                db.exec("INSERT INTO cursorDiskKV VALUES (?, ?)", ["bubbleId:\(id):\(bid)", json(bubble)])
+            }
+            let start = bubbles.first?.0 ?? now, end = bubbles.last?.0 ?? now
+            let data: [String: Any] = [
+                "composerId": id, "name": name, "createdAt": ms(start), "lastUpdatedAt": ms(end),
+                "fullConversationHeadersOnly": heads, "status": busy ? "generating" : "completed",
+                "generatingBubbleIds": busy ? ["\(id)-next"] : [],
+                "todos": todos.enumerated().map { ["id": "\($0.offset)", "content": $0.element.0, "status": $0.element.1] },
+            ]
+            db.exec("INSERT INTO cursorDiskKV VALUES (?, ?)", ["composerData:\(id)", json(data)])
+            let header: [String: Any] = ["composerId": id, "type": "head", "unifiedMode": "agent",
+                                         "workspaceIdentifier": ["id": "ws-\(id)", "uri": ["fsPath": cwd, "scheme": "file"]]]
+            db.exec("INSERT INTO composerHeaders VALUES (?, ?, ?, ?, 0, 0, ?, 0, ?)",
+                    [id, "ws-\(id)", "\(ms(start))", "\(ms(end))", "\(ms(end))", json(header)])
+        }
+        func edit(_ file: String, in dir: String) -> [String: Any] {
+            ["type": 2, "text": "", "toolFormerData": ["name": "edit_file", "status": "completed", "params": json(["relativeWorkspacePath": dir + "/" + file])]]
+        }
+        let web = acme + "/apps/web", mobile = acme + "/apps/mobile"
+        chat("cursor-demo-grid", cwd: web, name: "Responsive product grid", busy: false,
+             todos: [("Two columns under 640px", "completed"), ("Four columns from 1024px", "completed"), ("Lazy-load images", "completed")], [
+                (ago(190), ["type": 1, "text": "Make the product grid responsive: two columns on phones, four on desktop, and lazy-load the images."]),
+                (ago(186), edit("src/components/ProductGrid.tsx", in: web)),
+                (ago(181), edit("src/styles/grid.css", in: web)),
+                (ago(178), ["type": 2, "text": "", "toolFormerData": ["name": "run_terminal_cmd", "status": "completed", "params": json(["command": "npm run lint"])]]),
+                (ago(176), ["type": 2, "text": "The grid is two columns under 640px and four from 1024px. Images lazy-load with a blurred placeholder, and lint passes."]),
+             ])
+        chat("cursor-demo-refresh", cwd: mobile, name: "Pull to refresh", busy: true,
+             todos: [("Refresh control on order history", "completed"), ("Reload orders from the API", "in_progress"), ("Haptic on release", "pending")], [
+                (ago(6), ["type": 1, "text": "Add pull-to-refresh to the order history screen, with a light haptic when it reloads."]),
+                (ago(4), edit("src/screens/OrderHistory.tsx", in: mobile)),
+                (ago(1), edit("src/api/orders.ts", in: mobile)),
+             ])
+    }
+
+    // MARK: Gemini CLI (one JSON file per session under ~/.gemini/tmp/<project>/chats)
+
+    private func writeGemini() {
+        let fm = FileManager.default
+        let infra = acme + "/infra"
+        let dir = base + "/gemini/tmp/" + GeminiReader.hash(infra) + "/chats"
+        try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        let start = ago(5 * 60)
+        func at(_ m: Double) -> String { iso.string(from: start.addingTimeInterval(m * 60)) }
+        let session: [String: Any] = [
+            "sessionId": "gm-demo-01", "projectHash": GeminiReader.hash(infra), "directories": [infra],
+            "startTime": at(0), "lastUpdated": at(14),
+            "messages": [
+                ["id": "m1", "timestamp": at(0), "type": "user",
+                 "content": "Write a Terraform plan that moves the staging database to a smaller instance, and tell me the monthly saving."],
+                ["id": "m2", "timestamp": at(3), "type": "gemini", "content": "",
+                 "toolCalls": [["id": "t1", "name": "read_file", "args": ["absolute_path": infra + "/staging/db.tf"], "status": "success", "timestamp": at(2)],
+                               ["id": "t2", "name": "replace", "args": ["file_path": infra + "/staging/db.tf"], "status": "success", "timestamp": at(6)],
+                               ["id": "t3", "name": "run_shell_command", "args": ["command": "terraform plan"], "status": "success", "timestamp": at(11)]]],
+                ["id": "m3", "timestamp": at(14), "type": "gemini",
+                 "content": "Staging moves from db.r6g.large to db.t4g.medium, about $210 a month less. The plan changes one resource and nothing else."],
+            ],
+        ]
+        let path = dir + "/session-demo-01.json"
+        try? json(session).write(toFile: path, atomically: true, encoding: .utf8)
+        try? fm.setAttributes([.modificationDate: start.addingTimeInterval(14 * 60)], ofItemAtPath: path)
+    }
+
+    // MARK: Antigravity (a folder of Markdown artifacts per conversation)
+
+    private func writeAntigravity() {
+        let fm = FileManager.default
+        try? fm.createDirectory(atPath: base + "/antigravity", withIntermediateDirectories: true)
+        let billing = acme + "/apps/billing"
+        let dir = base + "/gemini/antigravity/brain/7f3c2a10-demo-4b1e-9c55-antigravity01"
+        try? fm.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        let files: [(String, String)] = [
+            ("implementation_plan.md", """
+            # Implementation Plan: Retry failed Stripe webhooks
+
+            Failed webhooks are dropped today. Retry them with exponential backoff and keep the ones that still fail, so nothing is lost.
+
+            ## Changes
+            - [retry.ts](file://\(billing)/src/webhooks/retry.ts): backoff of 1, 4 and 16 minutes
+            - [schema.sql](file://\(billing)/db/schema.sql): a dead-letter table
+            """),
+            ("task.md", """
+            # Task: Retry failed Stripe webhooks
+
+            - [x] Read the current webhook handler
+            - [x] Add retries with exponential backoff
+            - [x] Dead-letter table for webhooks that still fail
+            - [x] Tests for the retry schedule
+            """),
+            ("walkthrough.md", """
+            # Walkthrough
+
+            Failed webhooks now retry after 1, 4 and 16 minutes, and land in a dead-letter table after the third try. Six new tests cover the schedule.
+            """),
+        ]
+        for (i, (name, text)) in files.enumerated() {
+            let path = dir + "/" + name
+            try? text.write(toFile: path, atomically: true, encoding: .utf8)
+            try? fm.setAttributes([.modificationDate: ago(20 * 60 - Double(i) * 25)], ofItemAtPath: path)
+        }
+        try? fm.setAttributes([.creationDate: ago(20 * 60 + 40)], ofItemAtPath: dir)
     }
 
     // MARK: Codex sessions (JSONL rollouts, as the Codex CLI writes them)
@@ -177,7 +308,7 @@ struct DemoData {
             index += "| [\(t.id)](tasks/\(t.id)-\(t.slug).md) | \(t.title) | \(t.area) | \(t.prio) | \(t.status) |\n"
         }
         try? index.write(toFile: folder + "/BACKLOG.md", atomically: true, encoding: .utf8)
-        try? "# Acme backlog\n\nShared task list for all Acme apps. Edited by hand, in ClaudeBoard, or by Claude.\n"
+        try? "# Acme backlog\n\nShared task list for all Acme apps. Edited by hand, in Pitwall, or by Claude.\n"
             .write(toFile: folder + "/README.md", atomically: true, encoding: .utf8)
     }
 

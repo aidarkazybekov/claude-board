@@ -17,7 +17,7 @@ enum Guide {
         GuidePage(id: 0, title: "Two kinds of tasks, one board",
                   lead: "Your own plans and everything you hand to coding agents, side by side.",
                   points: [
-                      "**Your agents' work** is found on its own. Every request you give Claude Code or Codex becomes a ticket in its project, with the plan, the outcome and the files touched.",
+                      "**Your agents' work** is found on its own. Every request you give Claude Code, Codex, Cursor, Gemini CLI or Antigravity becomes a ticket in its project, with the plan, the outcome and the files touched.",
                       "**Your tasks** are what each project still needs, often before any agent knows about it. You add these yourself.",
                       "Nothing to set up: the app reads the agents' history on this Mac and checks for new work every 20 seconds.",
                   ], visual: .twoKinds),

@@ -1,6 +1,6 @@
 import Foundation
 
-/// `ClaudeBoard --dump [n]` prints what ingestion sees, for checking it against real data.
+/// `Pitwall --dump [n]` prints what ingestion sees, for checking it against real data.
 enum Dump {
     static func run(limit: Int) {
         let ing = Ingestor()

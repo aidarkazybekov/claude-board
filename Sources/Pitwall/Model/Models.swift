@@ -65,7 +65,7 @@ enum TaskOrigin: String, Codable, Hashable {
     case history
     /// A follow-up Claude proposed (start_session "own_initiative").
     case suggested
-    /// Created by hand in ClaudeBoard, stored on this Mac.
+    /// Created by hand in Pitwall, stored on this Mac.
     case manual
     /// A task file in a backlog folder (shared through the repo).
     case file

@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] `CLAUDEBOARD_DATA_DIR=$(mktemp -d) .build/debug/ClaudeBoard --selftest` passes
-- [ ] Parser/merge/backlog-file changes have a new check in `SelfTest.swift`
-- [ ] No network calls, no writes to `~/.claude`, backlog edits stay surgical ([ground rules](https://github.com/aidarkazybekov/claude-board/blob/main/CONTRIBUTING.md#ground-rules))
+- [ ] `PITWALL_DATA_DIR=$(mktemp -d) .build/debug/Pitwall --selftest` passes
+- [ ] Reader/merge/backlog-file changes have a new check in `SelfTest.swift`
+- [ ] No network calls, no writes to any agent's files, backlog edits stay surgical ([ground rules](https://github.com/aidarkazybekov/pitwall/blob/main/CONTRIBUTING.md#ground-rules))
 - [ ] Screenshots contain no private data

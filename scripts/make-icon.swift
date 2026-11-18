@@ -1,4 +1,4 @@
-// Renders the ClaudeBoard app icon (a three-column board on a warm gradient) to a 1024px PNG.
+// Renders the Pitwall app icon (a three-column board on a warm gradient) to a 1024px PNG.
 // Usage: swift scripts/make-icon.swift <out.png>
 import AppKit
 

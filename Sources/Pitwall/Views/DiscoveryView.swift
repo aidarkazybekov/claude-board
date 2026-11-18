@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// What ClaudeBoard found in the user's Claude history. Shown once right after onboarding (the
-/// first "aha"), and any time from Help → What ClaudeBoard Found.
+/// What Pitwall found in the user's agent history. Shown once right after onboarding (the
+/// first "aha"), and any time from Help → What Pitwall Found.
 struct DiscoveryStats: Equatable {
     struct Top: Equatable {
         var id: String
@@ -115,7 +115,7 @@ struct DiscoverySheet: View {
                     AgentAvatar(agent: a, size: 30).opacity(present ? 1 : 0.35)
                     Text(a.title).font(Studio.text(14, .heavy)).foregroundStyle(present ? Studio.ink : Studio.muted)
                     Spacer()
-                    Text(!present ? "Not installed" : st.sessions > 0 ? "\(n(st.sessions)) session\(st.sessions == 1 ? "" : "s")" : (a == .claudeCode || a == .codex) ? "No sessions yet" : "Found")
+                    Text(!present ? "Not installed" : st.sessions > 0 ? "\(n(st.sessions)) session\(st.sessions == 1 ? "" : "s")" : "No sessions yet")
                         .font(Studio.text(13, .bold)).foregroundStyle(present ? Studio.ink2 : Studio.muted)
                 }
                 .padding(.horizontal, 12)

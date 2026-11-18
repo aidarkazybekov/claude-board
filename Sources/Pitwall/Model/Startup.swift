@@ -1,11 +1,11 @@
 import AppKit
 import ServiceManagement
 
-/// How ClaudeBoard starts and where it shows up: open at login, quiet start in the menu bar, Dock icon.
+/// How Pitwall starts and where it shows up: open at login, quiet start in the menu bar, Dock icon.
 enum Startup {
     static let dockKey = "showInDock"
-    /// True when macOS opened ClaudeBoard at login (or CLAUDEBOARD_QUIET_START is set): menu bar only, no window.
-    static var quiet = ProcessInfo.processInfo.environment["CLAUDEBOARD_QUIET_START"] != nil
+    /// True when macOS opened Pitwall at login (or PITWALL_QUIET_START is set): menu bar only, no window.
+    static var quiet = ProcessInfo.processInfo.environment["PITWALL_QUIET_START"] != nil
     /// Set once the launch window has been dealt with, so later "Open Board" clicks always show it.
     static var quietHandled = false
 
@@ -66,14 +66,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Store.debugLog("startup: quiet=\(Startup.quiet) dock=\(Startup.showInDock)")
     }
 
-    /// ClaudeBoard lives in the menu bar: closing the board must never quit it (it would stop
+    /// Pitwall lives in the menu bar: closing the board must never quit it (it would stop
     /// tracking and notifying). Quit from the menu bar window or with ⌘Q.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Only a window that pops up while launching is closed; after that, "Open Board" always opens.
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { Startup.quietHandled = true }
-        guard ProcessInfo.processInfo.environment["CLAUDEBOARD_LOG"] != nil else { return }
+        guard ProcessInfo.processInfo.environment["PITWALL_LOG"] != nil else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
             let visible = NSApp.windows.filter { $0.isVisible && $0.identifier?.rawValue.hasPrefix("main") == true }.count
             let all = NSApp.windows.map { "\($0.identifier?.rawValue ?? "-")[\(type(of: $0))]\($0.isVisible ? "+" : "")" }.joined(separator: " ")

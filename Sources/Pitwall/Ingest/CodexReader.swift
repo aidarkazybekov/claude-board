@@ -308,7 +308,7 @@ final class CodexReader {
         return versions.max { $0.0 < $1.0 }?.1
     }
 
-    private static func mtimeKey(_ path: String) -> String {
+    static func mtimeKey(_ path: String) -> String {
         let a = try? FileManager.default.attributesOfItem(atPath: path)
         let m = (a?[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0
         let s = (a?[.size] as? NSNumber)?.intValue ?? 0

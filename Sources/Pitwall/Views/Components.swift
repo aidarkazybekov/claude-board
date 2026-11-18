@@ -157,7 +157,7 @@ final class PulseDotView: NSView {
         ring.strokeColor = green.withAlphaComponent(0.6).cgColor
         ring.lineWidth = 1.5
         ring.removeAllAnimations()
-        guard busy, ProcessInfo.processInfo.environment["CLAUDEBOARD_NO_PULSE"] == nil else {
+        guard busy, ProcessInfo.processInfo.environment["PITWALL_NO_PULSE"] == nil else {
             ring.opacity = 0
             return
         }

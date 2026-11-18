@@ -2,8 +2,8 @@
 // guide, the site's hero and crops, link-preview cards, a looping GIF and a captioned tour video
 // (English and Russian).
 //
-//   swift build -c release
-//   .build/release/ClaudeBoard --media build/raw     # renders off screen, never takes focus
+//   scripts/build-app.sh --no-install
+//   build/Pitwall.app/Contents/MacOS/Pitwall --media "$PWD/build/raw"   # off screen, never takes focus
 //   swift scripts/make-media.swift build/raw docs build/media
 //
 // Uses only AppKit, AVFoundation and ImageIO.
@@ -191,27 +191,27 @@ struct Script { let lang: String; let intro: (String, String); let slides: [Slid
 
 let scripts = [
     Script(lang: "en",
-           intro: ("ClaudeBoard", "Everything you ask your coding agents, on one board"),
+           intro: ("Pitwall", "Everything you ask your coding agents, on one board"),
            slides: [
-               Slide(shot: "board", caption: "Every request to Claude Code or Codex becomes a ticket"),
+               Slide(shot: "board", caption: "Every request to your coding agents becomes a ticket"),
                Slide(shot: "needs-you", caption: "See which agent is waiting on you, and what it asked"),
                Slide(shot: "plan", caption: "Plan each project's tasks. Agent sessions link to them"),
                Slide(shot: "project", caption: "Follow an agent's plan while it works"),
                Slide(shot: "worklog", caption: "A worklog of what you asked and what got done"),
-               Slide(shot: "insights", caption: "Insights: requests per day, which agent did the work"),
+               Slide(shot: "insights", caption: "Claude Code, Codex, Cursor, Gemini CLI, Antigravity: who did what"),
            ],
-           outro: ("Free & open source", "macOS 15+ · runs locally · nothing leaves your Mac", "github.com/aidarkazybekov/claude-board")),
+           outro: ("Free & open source", "macOS 15+ · runs locally · nothing leaves your Mac", "github.com/aidarkazybekov/pitwall")),
     Script(lang: "ru",
-           intro: ("ClaudeBoard", "Всё, что вы поручаете кодинг-агентам, на одной доске"),
+           intro: ("Pitwall", "Всё, что вы поручаете кодинг-агентам, на одной доске"),
            slides: [
-               Slide(shot: "board", caption: "Каждый запрос к Claude Code или Codex становится тикетом"),
+               Slide(shot: "board", caption: "Каждый запрос к кодинг-агентам становится тикетом"),
                Slide(shot: "needs-you", caption: "Видно, какой агент ждёт вашего ответа и что он спросил"),
                Slide(shot: "plan", caption: "Свои задачи по каждому проекту, с привязкой к сессиям агентов"),
                Slide(shot: "project", caption: "План агента в реальном времени"),
                Slide(shot: "worklog", caption: "Ворклог: что просили и что сделано"),
-               Slide(shot: "insights", caption: "Аналитика: запросы по дням и какой агент работал"),
+               Slide(shot: "insights", caption: "Claude Code, Codex, Cursor, Gemini CLI, Antigravity: кто что сделал"),
            ],
-           outro: ("Бесплатно и open source", "macOS 15+ · работает локально · данные не покидают Mac", "github.com/aidarkazybekov/claude-board")),
+           outro: ("Бесплатно и open source", "macOS 15+ · работает локально · данные не покидают Mac", "github.com/aidarkazybekov/pitwall")),
 ]
 
 // MARK: - Frames
@@ -381,5 +381,5 @@ makeGIF(scripts[0], path: "\(mediaDir)/tour.gif")
 for s in scripts {
     let suffix = s.lang == "en" ? "" : "-ru"
     makeVideo(s, width: 1280, height: 720, bitrate: 1_500_000, path: "\(siteDir)/tour-720\(suffix).mp4")
-    makeVideo(s, width: 1920, height: 1080, bitrate: 6_000_000, path: "\(buildDir)/claudeboard-tour-\(s.lang).mp4")
+    makeVideo(s, width: 1920, height: 1080, bitrate: 6_000_000, path: "\(buildDir)/pitwall-tour-\(s.lang).mp4")
 }

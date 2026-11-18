@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import WebKit
 
-/// `ClaudeBoard --snapshot <dir>` renders each screen of the running app to PNGs and quits.
+/// `Pitwall --snapshot <dir>` renders each screen of the running app to PNGs and quits.
 /// Used to check the UI without Screen Recording permission.
 @MainActor
 enum Snapshot {

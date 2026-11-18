@@ -3,41 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ClaudeBoard: a Mac task board for everything you ask Claude Code</title>
-<meta name="description" content="A free, open-source Mac app that turns your Claude Code sessions into tickets, next to the tasks you plan for each project. Local only.">
+<title>Pitwall: one board for everything you ask your coding agents</title>
+<meta name="description" content="A free, open-source Mac app that turns what you ask Claude Code, Codex, Cursor, Gemini CLI and Antigravity into tickets, next to the tasks you plan for each project. Local only.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" type="image/png" sizes="64x64" href="site/icon-64.png">
 <link rel="apple-touch-icon" href="site/icon-180.png">
-<link rel="canonical" href="https://aidarkazybekov.github.io/claude-board/">
-<link rel="alternate" hreflang="en" href="https://aidarkazybekov.github.io/claude-board/">
-<link rel="alternate" hreflang="ru" href="https://aidarkazybekov.github.io/claude-board/ru/">
-<link rel="alternate" hreflang="x-default" href="https://aidarkazybekov.github.io/claude-board/">
+<link rel="canonical" href="https://aidarkazybekov.github.io/pitwall/">
+<link rel="alternate" hreflang="en" href="https://aidarkazybekov.github.io/pitwall/">
+<link rel="alternate" hreflang="ru" href="https://aidarkazybekov.github.io/pitwall/ru/">
+<link rel="alternate" hreflang="x-default" href="https://aidarkazybekov.github.io/pitwall/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="ru_RU">
-<meta property="og:url" content="https://aidarkazybekov.github.io/claude-board/">
-<meta property="og:title" content="ClaudeBoard: everything you ask Claude, on one board">
-<meta property="og:description" content="A free Mac app that turns your Claude Code sessions into tickets, next to the tasks you plan per project. Open source, local only.">
-<meta property="og:image" content="https://aidarkazybekov.github.io/claude-board/site/og.png">
+<meta property="og:url" content="https://aidarkazybekov.github.io/pitwall/">
+<meta property="og:title" content="Pitwall: everything you ask your coding agents, on one board">
+<meta property="og:description" content="A free Mac app that shows the work of Claude Code, Codex, Cursor, Gemini CLI and Antigravity as tickets, and tells you which agent is waiting on you. Open source, local only.">
+<meta property="og:image" content="https://aidarkazybekov.github.io/pitwall/site/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aidarkazybekov.github.io/claude-board/site/og.png">
+<meta name="twitter:image" content="https://aidarkazybekov.github.io/pitwall/site/og.png">
 <link rel="stylesheet" href="site/style.css">
 </head>
 <body>
 
 <nav>
   <div class="wrap">
-    <a class="brand" href="./" aria-label="ClaudeBoard"><img src="site/icon-64.png" alt=""><span>ClaudeBoard</span></a>
+    <a class="brand" href="./" aria-label="Pitwall"><img src="site/icon-64.png" alt=""><span>Pitwall</span></a>
     <div class="links">
       <a href="#try">Try it</a>
       <a href="#yours">Your numbers</a>
       <a href="#features">Features</a>
-      <a href="https://github.com/aidarkazybekov/claude-board/blob/main/docs/GUIDE.md">Guide</a>
-      <a href="https://github.com/aidarkazybekov/claude-board">GitHub</a>
+      <a href="https://github.com/aidarkazybekov/pitwall/blob/main/docs/GUIDE.md">Guide</a>
+      <a href="https://github.com/aidarkazybekov/pitwall">GitHub</a>
       <a class="lang" href="ru/" lang="ru" hreflang="ru">Русский</a>
-      <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac</a>
+      <a class="btn btn-primary" href="https://github.com/aidarkazybekov/pitwall/releases/latest/download/Pitwall-macOS-arm64.zip">Download for Mac</a>
     </div>
   </div>
 </nav>
@@ -45,17 +45,20 @@
 <header class="hero">
   <div class="wrap">
     <div>
-      <h1>Everything you ask Claude, on one board.</h1>
-      <p class="lead">A Mac app that turns your Claude Code sessions into tickets, next to the tasks you plan per project.</p>
+      <h1>Everything you ask your coding agents, on one board.</h1>
+      <p class="lead">Pitwall turns every request to your agents into a ticket, next to the tasks you plan per project, and tells you the moment one is waiting on you.</p>
+      <ul class="agents" aria-label="Works with">
+        <li><span class="av">CC</span>Claude Code</li><li><span class="av">CX</span>Codex</li><li><span class="av">CU</span>Cursor</li><li><span class="av">GM</span>Gemini CLI</li><li><span class="av">AG</span>Antigravity</li>
+      </ul>
       <div class="ctas">
-        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac <small>Free</small></a>
-        <a class="btn btn-ghost" href="https://github.com/aidarkazybekov/claude-board">View on GitHub</a>
+        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/pitwall/releases/latest/download/Pitwall-macOS-arm64.zip">Download for Mac <small>Free</small></a>
+        <a class="btn btn-ghost" href="https://github.com/aidarkazybekov/pitwall">View on GitHub</a>
       </div>
     </div>
     <div class="shot">
       <picture>
         <source srcset="site/hero-dark.jpg" media="(prefers-color-scheme: dark)">
-        <img src="site/hero-light.jpg" width="2200" height="1375" alt="ClaudeBoard showing requests to Claude Code and Codex as tickets in Backlog, To do, In progress, Needs you and Done columns" fetchpriority="high">
+        <img src="site/hero-light.jpg" width="2200" height="1375" alt="Pitwall showing requests to Claude Code, Codex, Cursor, Gemini CLI and Antigravity as tickets in Backlog, To do, In progress, Needs you and Done columns" fetchpriority="high">
       </picture>
     </div>
   </div>
@@ -65,10 +68,10 @@
   <div class="wrap">
     <span class="label">Prefer Terminal?</span>
     <div class="cmd">
-      <code><span class="p">$ </span><span id="install-text">curl -fsSL https://aidarkazybekov.github.io/claude-board/install.sh | bash</span></code>
+      <code><span class="p">$ </span><span id="install-text">curl -fsSL https://aidarkazybekov.github.io/pitwall/install.sh | bash</span></code>
       <button type="button" id="copy-install">Copy</button>
     </div>
-    <p class="why">Checks the download, installs to Applications and opens it, with no security prompt to click through. Run it again to update. <a href="https://github.com/aidarkazybekov/claude-board/blob/main/docs/install.sh">Read the script</a>.</p>
+    <p class="why">Checks the download, installs to Applications and opens it, with no security prompt to click through. Run it again to update. <a href="https://github.com/aidarkazybekov/pitwall/blob/main/docs/install.sh">Read the script</a>.</p>
   </div>
 </section>
 
@@ -76,7 +79,7 @@
   <div class="wrap">
     <ul>
       <li><strong>Free and open source</strong><span>MIT licensed, built in public on GitHub</span></li>
-      <li><strong>Read-only with Claude</strong><span>It reads Claude Code's logs and never changes them</span></li>
+      <li><strong>Read-only with every agent</strong><span>It reads each agent's history and never changes it</span></li>
       <li><strong>Local only</strong><span>No account, no server, no analytics</span></li>
     </ul>
   </div>
@@ -85,27 +88,30 @@
 <section class="play" id="try">
   <div class="wrap">
     <h2 class="reveal">Try the board right here.</h2>
-    <p class="lead2 reveal">A live copy of the demo board. Drag a card to another column, open one to see Claude's plan, and watch a session stop to ask you something.</p>
+    <p class="lead2 reveal">A live copy of the demo board. Drag a card to another column, open one to see the agent's plan, and watch Codex stop to ask you something.</p>
     <div class="mini reveal" id="mini">
       <div class="mini-bar">
         <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
-        <strong>All Projects</strong>
+        <strong>All projects</strong>
         <span class="hint">Drag cards, click to open</span>
         <button type="button" id="mini-replay">Replay</button>
       </div>
       <div class="mini-body">
         <aside class="mini-side" aria-label="Sidebar">
-          <div class="row">Needs You <b id="cnt-needs">1</b></div>
-          <div class="row">In Progress <b id="cnt-prog">2</b></div>
+          <div class="row needs">Needs you <b id="cnt-needs">1</b></div>
+          <div class="row">In progress <b id="cnt-prog">3</b></div>
+          <div class="row all">All projects <b>8</b></div>
           <h4>Running now</h4>
           <div class="row" id="run-list"></div>
+          <h4>Agents</h4>
+          <div class="row"><span class="av">CC</span>Claude Code</div>
+          <div class="row"><span class="av">CX</span>Codex</div>
+          <div class="row"><span class="av">CU</span>Cursor</div>
           <h4>Projects</h4>
-          <div class="row"><i class="sw" style="background:#4078f2"></i>web</div>
-          <div class="row"><i class="sw" style="background:#945ce6"></i>api</div>
-          <div class="row"><i class="sw" style="background:#e6548c"></i>billing</div>
-          <div class="row"><i class="sw" style="background:#21a3a3"></i>mobile</div>
-          <div class="row"><i class="sw" style="background:#f28c33"></i>infra</div>
-          <div class="row"><i class="sw" style="background:#4da854"></i>recipe-bot</div>
+          <div class="row"><i class="sw" style="background:#3d6fe0"></i>web</div>
+          <div class="row"><i class="sw" style="background:#7a5ae0"></i>api</div>
+          <div class="row"><i class="sw" style="background:#c2417a"></i>billing</div>
+          <div class="row"><i class="sw" style="background:#1f9a80"></i>mobile</div>
         </aside>
         <div class="mini-board" id="mini-board"></div>
         <aside class="mini-drawer" id="mini-drawer" aria-label="Ticket details"></aside>
@@ -114,7 +120,7 @@
     </div>
     <div class="play-cta reveal">
       <p>That's the real thing, minus your own projects.</p>
-      <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac</a>
+      <a class="btn btn-primary" href="https://github.com/aidarkazybekov/pitwall/releases/latest/download/Pitwall-macOS-arm64.zip">Download for Mac</a>
     </div>
   </div>
 </section>
@@ -123,7 +129,7 @@
   <div class="wrap">
     <div class="yours-copy">
       <h2 class="reveal">What would it find on your Mac?</h2>
-      <p class="lead2 reveal">Point this page at your Claude Code folder. It reads the transcripts right here in the tab and shows what ClaudeBoard would put on your board. There is no server: nothing is uploaded or saved.</p>
+      <p class="lead2 reveal">Point this page at your Claude Code folder. It reads the transcripts right here in the tab and shows what Pitwall would put on your board. There is no server: nothing is uploaded or saved. (The app also reads Codex, Cursor, Gemini CLI and Antigravity; this page counts Claude Code.)</p>
       <ol class="yours-steps">
         <li>Click <strong>Choose your Claude folder</strong>.</li>
         <li>In the dialog, press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd>, paste <code>~/.claude/projects</code> <button type="button" class="mini-copy" data-yours="path">Copy</button> and press Return.</li>
@@ -134,7 +140,7 @@
         <input type="file" id="yours-input" class="sr" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
         <span>or drop the folder on the card</span>
       </div>
-      <div class="yours-mobile"><p>Open this page on the Mac where you use Claude Code to see your own numbers.</p><a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac</a></div>
+      <div class="yours-mobile"><p>Open this page on the Mac where you use Claude Code to see your own numbers.</p><a class="btn btn-primary" href="https://github.com/aidarkazybekov/pitwall/releases/latest/download/Pitwall-macOS-arm64.zip">Download for Mac</a></div>
     </div>
     <div class="yours-card" id="yours-card" data-state="idle" aria-live="polite">
       <div class="y-idle">
@@ -145,11 +151,11 @@
       <p class="y-status" id="yours-status"></p>
       <div class="y-result" id="yours-result"></div>
       <div class="y-actions">
-        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Get the live board</a>
+        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/pitwall/releases/latest/download/Pitwall-macOS-arm64.zip">Get the live board</a>
         <button type="button" class="btn btn-ghost" data-yours="share">Copy my numbers</button>
         <button type="button" class="y-clear" data-yours="clear">Clear</button>
       </div>
-      <p class="y-fine">Counted with the app's rules. The app also reads Claude Code's prompt history, so it can find more. "Copy my numbers" leaves out project names.</p>
+      <p class="y-fine">Counted with the app's rules. The app also reads Claude Code's prompt history and your other agents, so it finds more. "Copy my numbers" leaves out project names.</p>
     </div>
   </div>
 </section>
@@ -159,33 +165,33 @@
     <h2>See it in 30 seconds.</h2>
     <div class="player">
       <video id="tour-video" src="site/tour-720.mp4" poster="site/tour-poster.jpg" muted playsinline loop controls preload="none" width="1280" height="720"
-             aria-label="A 30 second tour of ClaudeBoard"></video>
+             aria-label="A 30 second tour of Pitwall"></video>
     </div>
   </div>
 </section>
 
 <section class="features" id="features">
   <div class="wrap">
-    <h2 class="reveal">Built around how you already work with Claude.</h2>
+    <h2 class="reveal">Built around how you already work with your agents.</h2>
     <div class="bento">
       <article class="cell a reveal">
         <div class="copy">
-          <h3>Know when Claude is waiting on you</h3>
-          <p>Needs You gathers every session that ended on a question, with the question itself, the outcome so far and a Resume button.</p>
+          <h3>Know which agent is waiting on you</h3>
+          <p>Needs you gathers every session that stopped on a question or a permission prompt, whichever agent ran it, with the question itself and a Resume button.</p>
         </div>
         <div class="media"><img src="site/needs-you.jpg" loading="lazy" width="1200" height="992" alt="A Codex ticket in Needs you, with the agent's question highlighted"></div>
       </article>
       <article class="cell b reveal">
         <div class="copy">
           <h3>Plan each project's tasks</h3>
-          <p>Your own backlog per app. Mention a key like T-004 in a prompt and the session links to it.</p>
+          <p>Your own backlog per app. Hand a task to any agent with Start with, or mention its key like T-004 in a prompt, and the session links to it.</p>
         </div>
         <div class="media"><img src="site/plan.jpg" loading="lazy" width="1400" height="848" alt="Plan view listing tasks per project"></div>
       </article>
       <article class="cell c reveal">
         <div class="copy">
           <h3>Tasks that live in your repo</h3>
-          <p>Plain markdown your team and Claude both read. Backlog.md compatible.</p>
+          <p>Plain markdown your team and your agents all read. Backlog.md compatible.</p>
         </div>
 <pre><span class="c">---</span>
 <span class="k">id:</span> T-004
@@ -197,14 +203,14 @@
       <article class="cell d reveal">
         <div class="copy">
           <h3>A worklog that writes itself</h3>
-          <p>What you asked and what got done, day by day, with Claude's active time.</p>
+          <p>What you asked and what got done, day by day, with each agent's active time.</p>
         </div>
         <div class="media"><img src="site/worklog.jpg" loading="lazy" width="1200" height="660" alt="Worklog grouped by day"></div>
       </article>
       <article class="cell e reveal">
         <div class="copy">
           <h3>See your rhythm</h3>
-          <p>Requests per day and project, status at a glance, and when in the week you work with Claude.</p>
+          <p>Requests per day and project, which agent did the work, and when in the week you work with them.</p>
         </div>
         <div class="media"><img src="site/insights.jpg" loading="lazy" width="1400" height="680" alt="Insights charts"></div>
       </article>
@@ -218,7 +224,7 @@
     <ol>
       <li><strong>Install</strong><p>Paste the one-line installer into Terminal. Or download the zip and approve it once in System Settings.</p></li>
       <li><strong>Pick your folders</strong><p>Point it at where your code lives, like <code>~/Developer</code>. Every git repo becomes a project.</p></li>
-      <li><strong>Keep working</strong><p>Use Claude Code as usual. The board fills in by itself every 20 seconds.</p></li>
+      <li><strong>Keep working</strong><p>Use your agents as usual. The board fills in by itself every 20 seconds.</p></li>
     </ol>
   </div>
 </section>
@@ -228,8 +234,8 @@
     <h2>Questions people ask.</h2>
     <div>
       <details open>
-        <summary>Does it change my Claude Code files?</summary>
-        <p>No. It reads <code>~/.claude</code> and the desktop app's session list, read-only. It writes only to its own folder and, when you edit a task, to that task's markdown file.</p>
+        <summary>Does it change my agents' files?</summary>
+        <p>No. It reads <code>~/.claude</code>, <code>~/.codex</code>, <code>~/.gemini</code> and Cursor's chat database, read-only. It writes only to its own folder and, when you edit a task, to that task's markdown file.</p>
       </details>
       <details>
         <summary>Does anything leave my Mac?</summary>
@@ -237,15 +243,19 @@
       </details>
       <details>
         <summary>What do I need?</summary>
-        <p>macOS 15 or later on Apple Silicon, and Claude Code: the CLI or the desktop app's Code tab. Intel Macs can build it from source.</p>
+        <p>macOS 15 or later on Apple Silicon, and at least one agent: Claude Code (CLI or desktop app), Codex, Cursor, Gemini CLI or Antigravity. Intel Macs can build it from source.</p>
       </details>
       <details>
-        <summary>macOS says it can't verify ClaudeBoard.</summary>
+        <summary>macOS says it can't verify Pitwall.</summary>
         <p>The app isn't notarized yet. The one-line installer avoids this prompt. If you downloaded the zip, open the app once, then go to System Settings, Privacy &amp; Security and click Open Anyway. macOS 15 removed the old right-click Open shortcut.</p>
       </details>
       <details>
         <summary>Can my team share the task list?</summary>
-        <p>Yes. Keep tasks in a <code>backlog/</code> folder in the repo. Everyone sees the same markdown files through git, and so does Claude.</p>
+        <p>Yes. Keep tasks in a <code>backlog/</code> folder in the repo. Everyone sees the same markdown files through git, and so do your agents.</p>
+      </details>
+      <details>
+        <summary>Pitwall used to be called ClaudeBoard?</summary>
+        <p>Yes. It was renamed when it learned to read every agent, not just Claude. Installing Pitwall over ClaudeBoard keeps your tasks and settings.</p>
       </details>
       <details>
         <summary>Can I try it without my own data?</summary>
@@ -263,8 +273,8 @@
         <p>Free, open source, and it stays on your Mac. Ideas and pull requests are welcome.</p>
       </div>
       <div class="ctas">
-        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download for Mac</a>
-        <a class="btn btn-ghost" href="https://github.com/aidarkazybekov/claude-board">Star on GitHub</a>
+        <a class="btn btn-primary" href="https://github.com/aidarkazybekov/pitwall/releases/latest/download/Pitwall-macOS-arm64.zip">Download for Mac</a>
+        <a class="btn btn-ghost" href="https://github.com/aidarkazybekov/pitwall">Star on GitHub</a>
       </div>
     </div>
   </div>
@@ -272,14 +282,14 @@
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="./"><img src="site/icon-64.png" alt="">ClaudeBoard</a>
+    <a class="brand" href="./"><img src="site/icon-64.png" alt="">Pitwall</a>
     <div class="links">
-      <a href="https://github.com/aidarkazybekov/claude-board/blob/main/docs/GUIDE.md">Guide</a>
-      <a href="https://github.com/aidarkazybekov/claude-board/releases">Releases</a>
-      <a href="https://github.com/aidarkazybekov/claude-board/issues/new/choose">Report an issue</a>
-      <a href="https://github.com/aidarkazybekov/claude-board">GitHub</a>
+      <a href="https://github.com/aidarkazybekov/pitwall/blob/main/docs/GUIDE.md">Guide</a>
+      <a href="https://github.com/aidarkazybekov/pitwall/releases">Releases</a>
+      <a href="https://github.com/aidarkazybekov/pitwall/issues/new/choose">Report an issue</a>
+      <a href="https://github.com/aidarkazybekov/pitwall">GitHub</a>
     </div>
-    <p class="legal">MIT licensed. A community project, not affiliated with or endorsed by Anthropic. Claude is a trademark of Anthropic.</p>
+    <p class="legal">MIT licensed. A community project, not affiliated with or endorsed by Anthropic, OpenAI, Anysphere or Google. Claude, Codex, Cursor, Gemini and Antigravity are trademarks of their owners.</p>
   </div>
 </footer>
 
@@ -287,16 +297,16 @@
   <form method="dialog"><button class="handoff-x" aria-label="Close">Close</button></form>
   <img src="site/icon-180.png" width="56" height="56" alt="">
   <h2 id="handoff-title">Get it on your Mac</h2>
-  <p>ClaudeBoard is a Mac app for Claude Code. Send this page to your Mac and install it there in about a minute.</p>
+  <p>Pitwall is a Mac app for your coding agents. Send this page to your Mac and install it there in about a minute.</p>
   <div class="handoff-actions">
     <button type="button" class="btn btn-primary" data-handoff="share">Send to my Mac…</button>
-    <a class="btn btn-ghost" data-handoff="mail" href="mailto:?subject=ClaudeBoard%20for%20my%20Mac">Email me the link</a>
+    <a class="btn btn-ghost" data-handoff="mail" href="mailto:?subject=Pitwall%20for%20my%20Mac">Email me the link</a>
     <button type="button" class="btn btn-ghost" data-handoff="copy">Copy link</button>
   </div>
   <input class="handoff-url" type="text" readonly aria-label="Link to this page" hidden>
   <p class="handoff-note">AirDrop, a message to yourself or a note all work. In Safari, Handoff can also show this page in your Mac's Dock.</p>
   <a class="handoff-try" href="#try" data-handoff="try">Meanwhile, try the board on this phone</a>
-  <a class="handoff-zip" data-handoff="zip" href="https://github.com/aidarkazybekov/claude-board/releases/latest/download/ClaudeBoard-macOS-arm64.zip">Download the zip anyway</a>
+  <a class="handoff-zip" data-handoff="zip" href="https://github.com/aidarkazybekov/pitwall/releases/latest/download/Pitwall-macOS-arm64.zip">Download the zip anyway</a>
 </dialog>
 
 <script src="site/main.js"></script>

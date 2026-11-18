@@ -28,6 +28,9 @@ final class Ingestor: @unchecked Sendable {
     private var discoveredRoots: [String] = []
     private var fileCache: [String: (mtime: Date, file: TaskFile)] = [:]
     private let codex = CodexReader()
+    private let cursor = CursorReader()
+    private let gemini = GeminiReader()
+    private let antigravity = AntigravityReader()
 
     /// Agents turned off in Settings; their history isn't read.
     var disabledAgents: Set<Agent> = []
@@ -158,12 +161,19 @@ final class Ingestor: @unchecked Sendable {
             result.sessions.append(s)
         }
 
-        // 4. Other agents.
-        if !disabledAgents.contains(.codex) {
-            if codex.update() { result.dataChanged = true }
-            result.transcriptTasks.append(contentsOf: codex.tasks)
-            result.transcriptSessionIDs.formUnion(codex.sessions.map(\.id))
-            result.sessions.append(contentsOf: codex.sessions)
+        // 4. Other agents, each from its own history on this Mac.
+        let readers: [(Agent, () -> Bool, () -> ([TaskItem], [SessionInfo]))] = [
+            (.codex, { self.codex.update() }, { (self.codex.tasks, self.codex.sessions) }),
+            (.cursor, { self.cursor.update() }, { (self.cursor.tasks, self.cursor.sessions) }),
+            (.gemini, { self.gemini.update() }, { (self.gemini.tasks, self.gemini.sessions) }),
+            (.antigravity, { self.antigravity.update() }, { (self.antigravity.tasks, self.antigravity.sessions) }),
+        ]
+        for (agent, update, output) in readers where !disabledAgents.contains(agent) {
+            if update() { result.dataChanged = true }
+            let (tasks, sessions) = output()
+            result.transcriptTasks.append(contentsOf: tasks)
+            result.transcriptSessionIDs.formUnion(sessions.map(\.id))
+            result.sessions.append(contentsOf: sessions)
         }
 
         result.duration = Date().timeIntervalSince(started)

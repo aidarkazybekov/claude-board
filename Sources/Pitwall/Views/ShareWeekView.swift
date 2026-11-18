@@ -100,7 +100,7 @@ struct WeekCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 30, height: 30)
-                Text("ClaudeBoard").font(.system(size: 15, weight: .bold, design: .rounded))
+                Text("Pitwall").font(.system(size: 15, weight: .bold, design: .rounded))
                 Spacer()
                 Text("\(Self.range.string(from: s.start)) – \(Self.range.string(from: s.end.addingTimeInterval(-1)))")
                     .font(.system(size: 14, weight: .semibold))
@@ -130,7 +130,7 @@ struct WeekCard: View {
 
             Spacer(minLength: 14)
             HStack {
-                Text("aidarkazybekov.github.io/claude-board").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color(hex: 0xC9CCD8))
+                Text("aidarkazybekov.github.io/pitwall").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color(hex: 0xC9CCD8))
                 Spacer()
                 Text("Free for Mac").font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color(hex: 0x14161F))

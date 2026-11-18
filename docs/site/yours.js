@@ -1,5 +1,5 @@
-// "What would ClaudeBoard find on your Mac?" Reads ~/.claude/projects in this tab, with the same
-// counting rules as the app (Sources/ClaudeBoard/Ingest/PromptText.swift, TranscriptParser.swift).
+// "What would Pitwall find on your Mac?" Reads ~/.claude/projects in this tab, with the same
+// counting rules as the app (Sources/Pitwall/Ingest/PromptText.swift, TranscriptParser.swift).
 // No network: the files are streamed from disk into this script and only the totals are kept.
 (function (root) {
   'use strict';
@@ -196,11 +196,11 @@
     days: { one: '{n} день', few: '{n} дня', many: '{n} дней', other: '{n} дня' }, busiestV: '{n} запр.',
     wait: { one: '{n} недавняя сессия закончилась вопросом от Claude.', few: '{n} недавние сессии закончились вопросом от Claude.',
       many: '{n} недавних сессий закончились вопросом от Claude.', other: '{n} недавней сессии закончились вопросом от Claude.' },
-    waitSub: 'ClaudeBoard собирает такие в «Ждут вас», чтобы ни одна не потерялась.',
+    waitSub: 'Pitwall собирает такие в «Ждут вас», чтобы ни одна не потерялась.',
     top: 'Куда ушла основная работа', req: 'запр.',
     replies: 'Плюс {n} коротких ответов вроде «да» и «давай»: приложение относит их к запросу, на который они отвечают.',
     copied: 'Скопировано', press: 'Нажмите ⌘C',
-    share: 'Я дал Claude Code {n} запросов в {p} проектах с {date}. Рекорд: {s} подряд. Посчитано в браузере с ClaudeBoard: https://aidarkazybekov.github.io/claude-board/ru/'
+    share: 'Я дал Claude Code {n} запросов в {p} проектах с {date}. Рекорд: {s} подряд. Посчитано в браузере с Pitwall: https://aidarkazybekov.github.io/pitwall/ru/'
   } : {
     reading: 'Reading {n} of {total} transcripts', none: 'No Claude Code transcripts in that folder. Choose ~/.claude/projects.',
     failed: "Couldn't read that folder. Try again, or choose ~/.claude/projects.",
@@ -208,11 +208,11 @@
     sessions: { one: 'session', other: 'sessions' }, projects: { one: 'project', other: 'projects' }, active: { one: 'day with Claude', other: 'days with Claude' }, streak: 'best streak', busiest: 'busiest day', hour: 'usual hour',
     days: { one: '{n} day', other: '{n} days' }, busiestV: '{n} requests',
     wait: { one: '{n} recent session ended with Claude asking you something.', other: '{n} recent sessions ended with Claude asking you something.' },
-    waitSub: 'ClaudeBoard gathers those in Needs You, so none of them gets lost.',
+    waitSub: 'Pitwall gathers those in Needs You, so none of them gets lost.',
     top: 'Where most of your work went', req: 'requests',
     replies: 'Plus {n} short replies like "yes" and "go ahead": the app folds those into the request they answer.',
     copied: 'Copied', press: 'Press ⌘C',
-    share: "I've given Claude Code {n} requests across {p} projects since {date}. Best streak: {s} in a row. Counted in my browser with ClaudeBoard: https://aidarkazybekov.github.io/claude-board/"
+    share: "I've given Claude Code {n} requests across {p} projects since {date}. Best streak: {s} in a row. Counted in my browser with Pitwall: https://aidarkazybekov.github.io/pitwall/"
   };
   var locale = RU ? 'ru-RU' : 'en-US';
   var num = new Intl.NumberFormat(locale);

@@ -442,7 +442,7 @@ enum TaskFolder {
         set("priority", priority)
         set("status", status)
         lines.insert(row(c), at: t.lastRow + 1)
-        try? lines.joined(separator: "\n").write(toFile: path, atomically: true, encoding: .utf8)
+        try? write(lines, crlf: crlf, to: path)
     }
 
     /// Creates `<dir>/backlog/` with a README explaining the format and an empty index.
@@ -454,7 +454,7 @@ enum TaskFolder {
 
         Tasks for this project, one markdown file per task in `tasks/`, indexed in `BACKLOG.md`.
         Plain text, so it works in git, in any editor, for teammates, and for Claude Code
-        ("read backlog/tasks/T-003-….md and do it"). ClaudeBoard reads and edits these files.
+        ("read backlog/tasks/T-003-….md and do it"). Pitwall reads and edits these files.
 
         ## Task file
 

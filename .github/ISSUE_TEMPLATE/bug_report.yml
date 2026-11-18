@@ -18,32 +18,36 @@ body:
     attributes:
       label: Steps to reproduce
       placeholder: |
-        1. Run a Claude Code session in a repo under my project root
+        1. Run a Codex (or Claude Code, Cursor, …) session in a repo under my project root
         2. Ask it to …
         3. The ticket shows …
   - type: input
     id: version
     attributes:
-      label: ClaudeBoard version
-      description: Shown in About ClaudeBoard, or the release you downloaded.
+      label: Pitwall version
+      description: Shown in About Pitwall, or the release you downloaded.
       placeholder: "0.2.0"
     validations:
       required: true
-  - type: input
-    id: claude
-    attributes:
-      label: Claude Code version
-      description: Output of `claude --version`. The log format changes between versions.
-      placeholder: "2.1.321"
   - type: dropdown
-    id: entry
+    id: agent
     attributes:
-      label: Where you run Claude Code
+      label: Which agent's tickets look wrong
       multiple: true
       options:
-        - Terminal (CLI)
+        - Claude Code (CLI)
         - Claude desktop app (Code tab)
-        - IDE extension
+        - Codex (CLI)
+        - Codex desktop app
+        - Cursor
+        - Gemini CLI
+        - Antigravity
+  - type: input
+    id: agent-version
+    attributes:
+      label: Agent version
+      description: For example the output of `claude --version` or `codex --version`. History formats change between versions.
+      placeholder: "claude 2.1.321"
   - type: input
     id: macos
     attributes:

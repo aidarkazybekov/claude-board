@@ -1,7 +1,7 @@
 import Foundation
 
-/// `ClaudeBoard --selftest` checks parsing and merge rules on synthetic data.
-/// Run with CLAUDEBOARD_DATA_DIR pointing at a temp folder so real data is untouched.
+/// `Pitwall --selftest` checks parsing and merge rules on synthetic data.
+/// Run with PITWALL_DATA_DIR pointing at a temp folder so real data is untouched.
 @MainActor
 enum SelfTest {
     static var failures = 0
@@ -13,8 +13,8 @@ enum SelfTest {
 
     static func run() -> Int32 {
         setvbuf(stdout, nil, _IONBF, 0)
-        guard ProcessInfo.processInfo.environment["CLAUDEBOARD_DATA_DIR"] != nil else {
-            print("set CLAUDEBOARD_DATA_DIR to a temp folder first"); return 2
+        guard ProcessInfo.processInfo.environment["PITWALL_DATA_DIR"] != nil else {
+            print("set PITWALL_DATA_DIR to a temp folder first"); return 2
         }
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("cb-selftest-\(UUID().uuidString.prefix(6))")
         try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
@@ -141,7 +141,7 @@ enum SelfTest {
         taskFile("T-001", "web-deploy", "Web deploy script — one page never ships", "P1", "backlog")
         taskFile("T-002", "invoices", "Invoice export is off by one day", "P2", "investigating", "owner-session: billing\n")
         taskFile("T-003", "flags", "Decide whether we need a feature-flag service", "P3", "backlog")
-        setenv("CLAUDEBOARD_ROOTS", tmp.path, 1)
+        setenv("PITWALL_ROOTS", tmp.path, 1)
         let disc = Discovery.scan(roots: [tmp.path])
         check(disc.taskFolders == [ws + "/backlog"], "backlog folder discovered")
         check(Set(disc.repos) == Set([ws + "/apps/billing", ws + "/apps/web", ws + "/apps/api"]), "repos discovered")
@@ -305,10 +305,10 @@ enum SelfTest {
         let emptyClaude = tmp.appendingPathComponent("empty-claude").path
         try? fm.createDirectory(atPath: rr + "/ws/backlog/tasks", withIntermediateDirectories: true)
         try? fm.createDirectory(atPath: emptyClaude, withIntermediateDirectories: true)
-        setenv("CLAUDEBOARD_ROOTS", rr, 1)
-        setenv("CLAUDEBOARD_CLAUDE_DIR", emptyClaude, 1)
-        setenv("CLAUDEBOARD_DESKTOP_DIR", emptyClaude + "/desktop", 1)
-        setenv("CLAUDEBOARD_CODEX_DIR", emptyClaude + "/codex", 1)
+        setenv("PITWALL_ROOTS", rr, 1)
+        setenv("PITWALL_CLAUDE_DIR", emptyClaude, 1)
+        setenv("PITWALL_DESKTOP_DIR", emptyClaude + "/desktop", 1)
+        setenv("PITWALL_CODEX_DIR", emptyClaude + "/codex", 1)
         func task(_ path: String, _ id: String) {
             try! "---\nid: \(id)\ntitle: Task \(id)\nstatus: todo\n---\n".write(toFile: path, atomically: true, encoding: .utf8)
         }
@@ -323,6 +323,8 @@ enum SelfTest {
         check(r3.taskFolders.contains(rr + "/side/backlog") && r3.plannedTasks.count == 3, "a new backlog folder appears on the next refresh")
 
         auditChecks(tmp)
+        renameChecks(tmp)
+        agentReaderChecks(tmp)
 
         print("Demo world")
         Demo.prepare()
@@ -337,10 +339,101 @@ enum SelfTest {
         check(!demoItems.contains { !$0.origin.isPlanned && $0.origin != .suggested && $0.status == .todo && $0.recap != nil },
               "no finished ticket left in To Do")
         check(Paths.tilde(Demo.base.path + "/Projects/acme") == "~/Projects/acme", "demo paths shown as ~/Projects")
+        check(Set(demoItems.compactMap(\.agentKind)) == Set(Agent.allCases), "every agent has work on the demo board")
 
         try? FileManager.default.removeItem(at: tmp)
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) check(s) failed")
         return failures == 0 ? 0 : 1
+    }
+
+    // MARK: - Cursor, Gemini CLI, Antigravity
+
+    static func agentReaderChecks(_ tmp: URL) {
+        print("Other agents")
+        let fm = FileManager.default
+        func json(_ o: Any) -> String { String(data: try! JSONSerialization.data(withJSONObject: o), encoding: .utf8)! }
+        let now = Date()
+        let ms = Int(now.timeIntervalSince1970 * 1000) - 60_000
+
+        // Cursor: an older build with the conversation inline, plus an archived chat.
+        let cdb = tmp.appendingPathComponent("cursor-state.vscdb").path
+        if let db = SQLiteWriter(path: cdb) {
+            db.exec("CREATE TABLE cursorDiskKV (key TEXT, value TEXT)")
+            db.exec("CREATE TABLE composerHeaders (composerId TEXT PRIMARY KEY, workspaceId TEXT, createdAt INTEGER, lastUpdatedAt INTEGER, isArchived INTEGER, isSubagent INTEGER, recency INTEGER, checkpointAt INTEGER, value TEXT)")
+            let open: [String: Any] = ["composerId": "c1", "createdAt": ms, "lastUpdatedAt": ms, "conversation": [
+                ["type": 1, "bubbleId": "u1", "text": "Rename the settings screen to Preferences"],
+                ["type": 2, "bubbleId": "a1", "text": "", "toolFormerData": ["name": "run_terminal_cmd", "status": "pending", "params": json(["command": "npm test"])]],
+            ]]
+            let archived: [String: Any] = ["composerId": "c2", "createdAt": ms, "conversation": [["type": 1, "bubbleId": "u2", "text": "Old chat about the logo colours"]]]
+            db.exec("INSERT INTO cursorDiskKV VALUES (?, ?)", ["composerData:c1", json(open)])
+            db.exec("INSERT INTO cursorDiskKV VALUES (?, ?)", ["composerData:c2", json(archived)])
+            db.exec("INSERT INTO composerHeaders VALUES ('c1', 'w1', 0, 0, 0, 0, 0, 0, ?)", [json(["workspaceIdentifier": ["id": "w1", "uri": ["fsPath": "/tmp/shop"]]])])
+            db.exec("INSERT INTO composerHeaders VALUES ('c2', 'w1', 0, 0, 1, 0, 0, 0, '{}')")
+        }
+        let cursor = CursorReader()
+        cursor.read(cdb, running: false)
+        check(cursor.tasks.count == 1 && cursor.tasks.first?.agent == .cursor && cursor.tasks.first?.cwd == "/tmp/shop",
+              "Cursor: inline conversations are read, archived chats skipped, the folder comes from the header")
+        check(cursor.tasks.first?.pendingAsk == "Allow running `npm test`?" && cursor.tasks.first?.stats.bashCalls == 1,
+              "Cursor: a command waiting for approval is a question for you")
+
+        // Gemini CLI: the JSONL layout, and project folders matched by hash.
+        check(GeminiReader.hash("/Users/me/code/app") == "9564acb42d7416f38450ddfd48b9786ea1d7bb286c1e278a09cb877b757e4b82",
+              "Gemini CLI: project folders are matched by the SHA-256 of their path")
+        let gdir = tmp.appendingPathComponent("gemini/tmp/abc/chats")
+        try? fm.createDirectory(at: gdir, withIntermediateDirectories: true)
+        let gfile = gdir.appendingPathComponent("session-1.jsonl").path
+        let iso = ISO8601DateFormatter()
+        let lines = [
+            json(["sessionId": "g1", "projectHash": "abc", "startTime": iso.string(from: now.addingTimeInterval(-3600)), "directories": ["/tmp/shop"]]),
+            json(["id": "m1", "timestamp": iso.string(from: now.addingTimeInterval(-3600)), "type": "user", "content": [["text": "Add a dark mode toggle to the header"]]]),
+            json(["id": "m2", "timestamp": iso.string(from: now.addingTimeInterval(-3500)), "type": "gemini", "content": "Added the toggle; it follows the system setting by default.",
+                  "toolCalls": [["id": "t1", "name": "write_file", "args": ["file_path": "/tmp/shop/src/Header.tsx"], "status": "success",
+                                 "timestamp": iso.string(from: now.addingTimeInterval(-3550))]]]),
+        ]
+        try? lines.joined(separator: "\n").write(toFile: gfile, atomically: true, encoding: .utf8)
+        try? fm.setAttributes([.modificationDate: now.addingTimeInterval(-3500)], ofItemAtPath: gfile)
+        let gemini = GeminiReader()
+        gemini.read([gfile])
+        let g = gemini.tasks.first
+        check(gemini.tasks.count == 1 && g?.stats.edits == 1 && g?.stats.filesTouched == ["/tmp/shop/src/Header.tsx"] && g?.stats.replied == true,
+              "Gemini CLI: a JSONL session gives a ticket with its edits and reply")
+        check(gemini.sessions.first?.isLive == false && gemini.sessions.first?.agent == .gemini, "Gemini CLI: an hour-old session isn't live")
+
+        // Antigravity: Markdown artifacts.
+        check(AntigravityReader.checklist("- [x] read\n  - [/] build\n- [ ] test\n- not a step").map(\.state) == [.completed, .inProgress, .pending],
+              "Antigravity: the task.md checklist becomes the plan")
+        check(AntigravityReader.heading("Intro\n# Implementation Plan: Faster search\n") == "Faster search", "Antigravity: the plan's title names the ticket")
+        check(AntigravityReader.fileLinks("[a](file:///x/y%20z.ts) and <file:///x/w.ts>, again file:///x/w.ts") == ["/x/y z.ts", "/x/w.ts"],
+              "Antigravity: file links point at the project")
+        check(AntigravityReader.firstParagraph("# T\n\n```\ncode\n```\nFirst line\nsecond line\n\nNext") == "First line second line",
+              "Antigravity: the summary skips headings and code")
+    }
+
+    // MARK: - ClaudeBoard → Pitwall
+
+    static func renameChecks(_ tmp: URL) {
+        print("Rename from ClaudeBoard")
+        let fm = FileManager.default
+        let old = tmp.appendingPathComponent("rename/ClaudeBoard"), new = tmp.appendingPathComponent("rename/Pitwall")
+        try? fm.createDirectory(at: old.appendingPathComponent("cache"), withIntermediateDirectories: true)
+        try? "{\"items\":[]}".write(to: old.appendingPathComponent("user.json"), atomically: true, encoding: .utf8)
+        try? "x".write(to: old.appendingPathComponent("cache/big.sqlite"), atomically: true, encoding: .utf8)
+        Rename.copyData(from: old, to: new)
+        check(fm.fileExists(atPath: new.appendingPathComponent("user.json").path), "the old data folder is copied")
+        check(!fm.fileExists(atPath: new.appendingPathComponent("cache").path), "the cache is left behind")
+        check(fm.fileExists(atPath: old.appendingPathComponent("user.json").path), "the old folder stays intact")
+        try? "{\"items\":[1]}".write(to: new.appendingPathComponent("user.json"), atomically: true, encoding: .utf8)
+        Rename.copyData(from: old, to: new)
+        check((try? String(contentsOf: new.appendingPathComponent("user.json"), encoding: .utf8)) == "{\"items\":[1]}",
+              "an existing Pitwall folder is never overwritten")
+        let suite = "pitwall-selftest-\(UUID().uuidString.prefix(6))"
+        let d = UserDefaults(suiteName: suite)!
+        d.set(false, forKey: "showInDock")
+        Rename.copySettings(["showInDock": true, "projectRoots": ["~/Code"]], into: d)
+        check(d.bool(forKey: "showInDock") == false && (d.stringArray(forKey: "projectRoots") ?? []) == ["~/Code"],
+              "old settings fill gaps but never replace new ones")
+        d.removePersistentDomain(forName: suite)
     }
 
     // MARK: - Fixes from the data audit (2026-11-16), one check each
@@ -524,6 +617,12 @@ enum SelfTest {
         try? TaskFolder.updateFields(crlfFile, [("status", "done")])
         let after = (try? String(contentsOfFile: crlfFile, encoding: .utf8)) ?? ""
         check(after.contains("status: done\r\n") && !after.contains("\r\r"), "a CRLF file keeps its line ends when edited")
+        let crlfIndex = crlfDir + "/BACKLOG.md"
+        try! "# Backlog\r\n\r\n| ID | Title | Status |\r\n|---|---|---|\r\n| [T-9](tasks/T-9.md) | Windows task | todo |\r\n".write(toFile: crlfIndex, atomically: true, encoding: .utf8)
+        TaskFolder.appendIndexRow(folder: crlfDir, id: "T-10", relPath: "tasks/T-10.md", title: "Next", area: "", priority: "", status: "todo")
+        let index = (try? String(contentsOfFile: crlfIndex, encoding: .utf8)) ?? ""
+        check(index.contains("T-10") && !index.replacingOccurrences(of: "\r\n", with: "").contains("\n"),
+              "a new row in a CRLF index keeps CRLF line ends")
 
         // Live sessions: a reused process id isn't a live session.
         let f = DateFormatter()
@@ -535,7 +634,7 @@ enum SelfTest {
 
         print("Codex")
         let codexDir = tmp.appendingPathComponent("codex").path
-        setenv("CLAUDEBOARD_CODEX_DIR", codexDir, 1)
+        setenv("PITWALL_CODEX_DIR", codexDir, 1)
         try? fm.createDirectory(atPath: codexDir + "/sessions/2026/11/17", withIntermediateDirectories: true)
         let events: [[String: Any]] = [
             ["timestamp": at(-300), "type": "session_meta", "payload": ["id": "cx-1", "cwd": cwd, "timestamp": at(-300)]],

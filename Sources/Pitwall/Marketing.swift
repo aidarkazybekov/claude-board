@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import WebKit
 
-/// `ClaudeBoard --media <dir>` renders the demo board's shots for the README, the site and the tour
+/// `Pitwall --media <dir>` renders the demo board's shots for the README, the site and the tour
 /// to PNGs and quits. Like `--render`, every window is drawn off screen and the app never takes focus;
 /// `scripts/make-media.swift` turns the PNGs into the published images and videos.
 @MainActor

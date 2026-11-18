@@ -23,7 +23,7 @@ struct ContentView: View {
         .sheet(isPresented: $store.showGuide) { GuideSheet() }
         .sheet(isPresented: $store.showShareWeek) { ShareWeekSheet() }
         .sheet(isPresented: $store.showDiscovery) { DiscoverySheet() }
-        .alert("ClaudeBoard", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
+        .alert("Pitwall", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
             Button("OK") { store.errorMessage = nil }
         } message: {
             Text(store.errorMessage ?? "")

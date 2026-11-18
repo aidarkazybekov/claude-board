@@ -59,3 +59,28 @@ extension Dictionary where Key == String, Value == Any {
     func str(_ k: String) -> String? { self[k] as? String }
     func int(_ k: String) -> Int64? { (self[k] as? Int64) ?? (self[k] as? Double).map { Int64($0) } }
 }
+
+/// Creates or opens a SQLite file for writing. Only the demo and the self-test use it, to build
+/// databases shaped like another app's.
+final class SQLiteWriter {
+    private var db: OpaquePointer?
+
+    init?(path: String) {
+        guard sqlite3_open(path, &db) == SQLITE_OK else {
+            sqlite3_close(db)
+            return nil
+        }
+    }
+
+    deinit { sqlite3_close(db) }
+
+    @discardableResult
+    func exec(_ sql: String, _ args: [String] = []) -> Bool {
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return false }
+        defer { sqlite3_finalize(stmt) }
+        let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+        for (i, a) in args.enumerated() { sqlite3_bind_text(stmt, Int32(i + 1), a, -1, transient) }
+        return sqlite3_step(stmt) == SQLITE_DONE
+    }
+}

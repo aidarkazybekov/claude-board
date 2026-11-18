@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ClaudeBoardApp: App {
+struct PitwallApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var store: Store
 
@@ -18,13 +18,13 @@ struct ClaudeBoardApp: App {
     }
 
     var body: some Scene {
-        Window("ClaudeBoard", id: "main") {
+        Window("Pitwall", id: "main") {
             ContentView()
                 .environment(store)
         }
         .defaultSize(width: 1500, height: 900)
         // Always show the main window at launch, whatever macOS saved about it at the last quit;
-        // except at login, where ClaudeBoard starts quietly in the menu bar.
+        // except at login, where Pitwall starts quietly in the menu bar.
         .defaultLaunchBehavior(Startup.quiet ? .suppressed : .presented)
         .commands {
             CommandGroup(replacing: .newItem) {
@@ -47,17 +47,17 @@ struct ClaudeBoardApp: App {
                 Button("All Projects") { store.sidebar = .all }.keyboardShortcut("0", modifiers: [.command, .shift])
             }
             CommandGroup(replacing: .help) {
-                Button("ClaudeBoard Guide") { store.showGuide = true }.keyboardShortcut("/", modifiers: .command)
-                Button("What ClaudeBoard Found…") { store.showDiscovery = true }
+                Button("Pitwall Guide") { store.showGuide = true }.keyboardShortcut("/", modifiers: .command)
+                Button("What Pitwall Found…") { store.showDiscovery = true }
                 if !Demo.isOn {
                     Button("Try the Demo Board") { DemoLauncher.open() }
                 }
                 Divider()
-                Button("ClaudeBoard on GitHub") {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/aidarkazybekov/claude-board")!)
+                Button("Pitwall on GitHub") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/aidarkazybekov/pitwall")!)
                 }
                 Button("Report an Issue…") {
-                    NSWorkspace.shared.open(URL(string: "https://github.com/aidarkazybekov/claude-board/issues/new/choose")!)
+                    NSWorkspace.shared.open(URL(string: "https://github.com/aidarkazybekov/pitwall/issues/new/choose")!)
                 }
             }
         }

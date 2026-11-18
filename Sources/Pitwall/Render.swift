@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// `ClaudeBoard --render <dir>` renders every screen of the demo board to PNGs and quits.
+/// `Pitwall --render <dir>` renders every screen of the demo board to PNGs and quits.
 /// Windows are drawn far off screen and the app never shows a Dock icon or takes focus,
 /// so it can run while someone is working on the same Mac.
 @MainActor

@@ -121,7 +121,7 @@ enum Launcher {
                 + body.split(separator: "\n").filter { $0.contains("exec ") || $0.hasPrefix("cd ") }.joined(separator: "\n"))
             return
         }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("claudeboard-\(UUID().uuidString.prefix(8)).command")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("pitwall-\(UUID().uuidString.prefix(8)).command")
         let script = "#!/bin/zsh -l\nrm -f \(quote(url.path))\n" + body + "\n"
         do {
             try script.write(to: url, atomically: true, encoding: .utf8)

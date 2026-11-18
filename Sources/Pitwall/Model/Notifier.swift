@@ -128,8 +128,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// Asks for permission the first time something is actually sent, never at launch.
     private func deliver(_ requests: [UNNotificationRequest]) {
         guard Self.available, !requests.isEmpty else { return }
-        // CLAUDEBOARD_NOTIFY_DRYRUN=1: log what would be shown (with CLAUDEBOARD_LOG) instead of asking macOS.
-        if ProcessInfo.processInfo.environment["CLAUDEBOARD_NOTIFY_DRYRUN"] != nil {
+        // PITWALL_NOTIFY_DRYRUN=1: log what would be shown (with PITWALL_LOG) instead of asking macOS.
+        if ProcessInfo.processInfo.environment["PITWALL_NOTIFY_DRYRUN"] != nil {
             for r in requests {
                 let c = r.content
                 Store.debugLog("notify: \(c.title) | \(c.subtitle) | \(c.body) | actions=\(c.categoryIdentifier.isEmpty ? "none" : "resume")")

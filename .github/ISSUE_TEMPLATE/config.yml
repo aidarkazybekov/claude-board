@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: Contributing guide
-    url: https://github.com/aidarkazybekov/claude-board/blob/main/CONTRIBUTING.md
+    url: https://github.com/aidarkazybekov/pitwall/blob/main/CONTRIBUTING.md
     about: Setup, ground rules and how to send a pull request.

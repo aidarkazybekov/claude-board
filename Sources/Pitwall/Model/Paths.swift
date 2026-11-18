@@ -4,20 +4,20 @@ enum Paths {
     static let home = FileManager.default.homeDirectoryForCurrentUser.path
 
     /// Overridable so the demo (and tests) never read the real Claude Code data.
-    static var claudeDir: String { ProcessInfo.processInfo.environment["CLAUDEBOARD_CLAUDE_DIR"] ?? home + "/.claude" }
+    static var claudeDir: String { ProcessInfo.processInfo.environment["PITWALL_CLAUDE_DIR"] ?? home + "/.claude" }
     static var projectsDir: String { claudeDir + "/projects" }
     static var historyFile: String { claudeDir + "/history.jsonl" }
     static var liveSessionsDir: String { claudeDir + "/sessions" }
     static var desktopSessionsDir: String {
-        ProcessInfo.processInfo.environment["CLAUDEBOARD_DESKTOP_DIR"] ?? home + "/Library/Application Support/Claude/claude-code-sessions"
+        ProcessInfo.processInfo.environment["PITWALL_DESKTOP_DIR"] ?? home + "/Library/Application Support/Claude/claude-code-sessions"
     }
 
     // Other agents' data, overridable like Claude Code's.
     private static func env(_ k: String) -> String? { ProcessInfo.processInfo.environment[k] }
-    static var codexDir: String { env("CLAUDEBOARD_CODEX_DIR") ?? home + "/.codex" }
-    static var cursorDir: String { env("CLAUDEBOARD_CURSOR_DIR") ?? home + "/Library/Application Support/Cursor" }
-    static var geminiDir: String { env("CLAUDEBOARD_GEMINI_DIR") ?? home + "/.gemini" }
-    static var antigravityDir: String { env("CLAUDEBOARD_ANTIGRAVITY_DIR") ?? home + "/Library/Application Support/Antigravity" }
+    static var codexDir: String { env("PITWALL_CODEX_DIR") ?? home + "/.codex" }
+    static var cursorDir: String { env("PITWALL_CURSOR_DIR") ?? home + "/Library/Application Support/Cursor" }
+    static var geminiDir: String { env("PITWALL_GEMINI_DIR") ?? home + "/.gemini" }
+    static var antigravityDir: String { env("PITWALL_ANTIGRAVITY_DIR") ?? home + "/Library/Application Support/Antigravity" }
 
     /// Where an agent keeps its history on this Mac.
     static func data(for agent: Agent) -> String {
@@ -26,18 +26,20 @@ enum Paths {
         case .codex: return codexDir
         case .cursor: return cursorDir
         case .gemini: return geminiDir
-        case .antigravity: return antigravityDir
+        case .antigravity:
+            // The app's own folder, or the agent's conversations in ~/.gemini/antigravity.
+            return FileManager.default.fileExists(atPath: antigravityDir) ? antigravityDir : geminiDir + "/antigravity"
         }
     }
 
     static var appSupport: URL {
-        if let override = ProcessInfo.processInfo.environment["CLAUDEBOARD_DATA_DIR"] {
+        if let override = ProcessInfo.processInfo.environment["PITWALL_DATA_DIR"] {
             let url = URL(fileURLWithPath: override, isDirectory: true)
             try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
             return url
         }
         let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("ClaudeBoard", isDirectory: true)
+            .appendingPathComponent("Pitwall", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
@@ -63,7 +65,7 @@ enum Roots {
 
     static var all: [String] {
         get {
-            if let env = ProcessInfo.processInfo.environment["CLAUDEBOARD_ROOTS"] {
+            if let env = ProcessInfo.processInfo.environment["PITWALL_ROOTS"] {
                 return env.split(separator: ":").map(String.init)
             }
             if let saved = UserDefaults.standard.stringArray(forKey: defaultsKey), !saved.isEmpty {

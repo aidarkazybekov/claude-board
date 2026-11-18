@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClaudeBoard",
+    name: "Pitwall",
     platforms: [.macOS(.v15)],
     products: [
-        .executable(name: "ClaudeBoard", targets: ["ClaudeBoard"])
+        .executable(name: "Pitwall", targets: ["Pitwall"])
     ],
     targets: [
         .executableTarget(
-            name: "ClaudeBoard",
-            path: "Sources/ClaudeBoard",
+            name: "Pitwall",
+            path: "Sources/Pitwall",
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]

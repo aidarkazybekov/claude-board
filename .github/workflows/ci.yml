@@ -16,12 +16,12 @@ jobs:
       - name: Build (debug)
         run: swift build
       - name: Self-test
-        run: CLAUDEBOARD_DATA_DIR="$(mktemp -d)" .build/debug/ClaudeBoard --selftest
+        run: PITWALL_DATA_DIR="$(mktemp -d)" .build/debug/Pitwall --selftest
       - name: Build app bundle (release)
         run: scripts/build-app.sh --no-install
       - name: Upload app
         uses: actions/upload-artifact@v4
         with:
-          name: ClaudeBoard-app
-          path: build/ClaudeBoard.app
+          name: Pitwall-app
+          path: build/Pitwall.app
           retention-days: 7
